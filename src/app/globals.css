@@ -1,26 +1,294 @@
 @import "tailwindcss";
 
+/* epiksode 테마 시스템 CSS 변수 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    /* Primary Colors */
+    --primary-purple: rgb(138, 92, 245);
+    --primary-purple-dark: rgb(109, 73, 194);
+    --primary-purple-light: rgb(167, 139, 250);
+    --primary-purple-very-light: rgba(138, 92, 245, 0.1);
+    --primary-black: rgb(17, 17, 26);
+    --primary-white: rgb(255, 255, 255);
+    --primary-gray: rgba(138, 92, 245, 0.65);
+    --primary-light-gray: rgb(245, 245, 248);
+    --primary-dark-gray: rgb(55, 55, 70);
+
+    /* Background Colors */
+    --bg-main: rgb(245, 242, 250);
+    --bg-dark: rgb(25, 25, 35);
+    --bg-gradient: linear-gradient(
+        135deg,
+        rgb(138, 92, 245) 0%,
+        rgb(109, 73, 194) 100%
+    );
+    --bg-transparent: rgba(0, 0, 0, 0);
+    --bg-overlay: rgba(138, 92, 245, 0.08);
+
+    /* Accent Colors */
+    --accent-pink: rgb(236, 72, 153);
+    --accent-cyan: rgb(34, 211, 238);
+    --accent-yellow: rgb(251, 191, 36);
+    --accent-green: rgb(74, 222, 128);
+
+    /* Brand Colors */
+    --epic-color: rgb(236, 72, 153);
+    --episode-color: rgb(138, 92, 245);
+    --story-color: rgb(34, 211, 238);
+
+    /* Typography */
+    --font-primary: var(--font-outfit);
+    --font-secondary: "Helvetica", Arial, sans-serif;
+    --font-display: var(--font-gloock);
+
+    /* Legacy Variables for Compatibility */
+    --background: var(--bg-main);
+    --foreground: var(--primary-black);
+
+    /* Font Sizes */
+    --text-base: 16px;
+    --text-sm: 14px;
+    --text-lg: 16px;
+    --text-4xl: 37px;
+
+    /* Font Weights */
+    --font-normal: 400;
+    --font-bold: 700;
+
+    /* Line Heights */
+    --leading-tight: 20px;
+    --leading-normal: 40px;
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 12px;
+    --space-md: 22px;
+    --space-lg: 28px;
+    --space-xl: 40px;
+
+    /* Border Radius */
+    --rounded-none: 0px;
+    --rounded-full: 28px;
+
+    /* Transitions */
+    --transition-default: all 0.3s ease;
+    --transition-color: color 0.3s ease;
+
+    /* Layout */
+    --container-padding: 0 20px;
+    --section-spacing: 60px;
+    --grid-gap: 20px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-outfit);
+    --font-mono: var(--font-geist-mono);
+    --font-serif: var(--font-gloock);
+}
+
+/* Dark mode variables */
+.dark {
+    --bg-main: var(--bg-dark);
+    --background: var(--bg-dark);
+    --foreground: var(--primary-white);
+    --text-primary: var(--primary-white);
+    --text-secondary: var(--primary-gray);
+}
+
+.light {
+    --bg-main: rgb(245, 242, 250);
+    --background: rgb(245, 242, 250);
+    --foreground: var(--primary-black);
+    --text-primary: var(--primary-black);
+    --text-secondary: var(--primary-gray);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    :root {
+        --background: var(--bg-dark);
+        --foreground: var(--primary-white);
+    }
+}
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-primary), Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    line-height: 1.6;
+    transition: var(--transition-color);
+}
+
+/* Typography styles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-display), Georgia, serif;
+    font-weight: var(--font-bold);
+    line-height: 1.2;
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+h2 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+h3 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+h4 {
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+p {
+    margin-bottom: 1em;
+    line-height: 1.7;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+    outline: 2px solid var(--primary-purple);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Utility classes */
+.text-gradient {
+    background: var(--bg-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient-primary {
+    background: var(--bg-gradient);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--primary-light-gray);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-purple);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-purple-dark);
+}
+
+/* Animation utilities */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive image container */
+.image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.image-container img {
+    transition: transform 0.3s ease;
+}
+
+.image-container:hover img {
+    transform: scale(1.05);
+}
+
+/* Print styles */
+@media print {
+    * {
+        background: transparent !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+
+    body {
+        font-size: 12pt;
+        line-height: 1.4;
+    }
+
+    h1,
+    h2,
+    h3 {
+        page-break-after: avoid;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --primary-purple: rgb(120, 80, 220);
+        --bg-main: rgb(255, 255, 255);
+        --text-primary: rgb(0, 0, 0);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
 }
