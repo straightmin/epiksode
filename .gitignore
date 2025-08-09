@@ -44,6 +44,10 @@ next-env.d.ts
 /claude
 CLAUDE.md
 
+# GEMINI
+/gemini
+GEMINI.md
+
 # documentation
 /docs
 
