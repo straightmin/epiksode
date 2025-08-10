@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoGrid from "../../components/photos/PhotoGrid";
@@ -79,7 +79,8 @@ const mockSearchResults = {
     ],
 };
 
-export default function SearchPage() {
+// 검색 파라미터를 사용하는 내부 컴포넌트
+function SearchContent() {
     const { theme, isDark } = useThemeContext();
     const searchParams = useSearchParams();
     const query = searchParams?.get('q') || '';
@@ -389,5 +390,49 @@ export default function SearchPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// 로딩 컴포넌트
+function SearchLoading() {
+    const { theme, isDark } = useThemeContext();
+    
+    return (
+        <div 
+            className="min-h-screen flex items-center justify-center"
+            style={{
+                backgroundColor: isDark
+                    ? theme.theme.colors.background.dark
+                    : theme.theme.colors.background.main,
+            }}
+        >
+            <div className="flex items-center gap-2">
+                <div
+                    className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
+                    style={{
+                        borderColor: theme.theme.colors.primary.purple,
+                        borderTopColor: "transparent",
+                    }}
+                />
+                <span
+                    style={{
+                        color: isDark
+                            ? theme.theme.colors.primary.white
+                            : theme.theme.colors.primary.black,
+                    }}
+                >
+                    검색 페이지를 불러오는 중...
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// 메인 컴포넌트 (Suspense 경계 제공)
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<SearchLoading />}>
+            <SearchContent />
+        </Suspense>
     );
 }
