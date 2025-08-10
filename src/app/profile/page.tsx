@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Camera, MapPin, Calendar, Heart, Bookmark } from "lucide-react";
 import PhotoGrid from "../../components/photos/PhotoGrid";
+import { PhotoDetail } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 임시 사용자 데이터
 const mockUser = {
@@ -15,8 +17,8 @@ const mockUser = {
     joinedDate: "2024년 1월",
     stats: {
         photos: 42,
-        followers: 1240,
-        following: 156,
+        followersCount: 1240,
+        followingCount: 156,
         likes: 5600,
     },
     avatar: "",
@@ -29,16 +31,23 @@ const mockUserPhotos = [
         imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
         title: "산속의 아침",
         description: "아침 안개가 자욱한 산맥의 모습",
-        photographer: { 
-            id: mockUser.id,
-            name: mockUser.name, 
+        author: { 
+            id: 1,
             username: mockUser.username,
-            avatar: mockUser.avatar || "",
-            isFollowing: false
+            bio: mockUser.bio,
+            profileImageUrl: mockUser.avatar || null,
+            createdAt: "2024-01-01T00:00:00Z"
         },
-        likes: 234,
-        comments: 12,
-        isLiked: true,
+        userId: 1,
+        thumbnailUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
+        viewCount: 100,
+        isPublic: true,
+        deletedAt: null,
+        likesCount: 234,
+        commentsCount: 12,
+        isLikedByCurrentUser: true,
+        isOwner: true,
+        updatedAt: "2024-01-15T09:30:00Z",
         createdAt: "2024-01-15T09:30:00Z",
     },
     {
@@ -46,16 +55,23 @@ const mockUserPhotos = [
         imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=500&fit=crop",
         title: "도시의 야경",
         description: "반짝이는 도시의 불빛들",
-        photographer: { 
-            id: mockUser.id,
-            name: mockUser.name, 
+        author: { 
+            id: 1,
             username: mockUser.username,
-            avatar: mockUser.avatar || "",
-            isFollowing: false
+            bio: mockUser.bio,
+            profileImageUrl: mockUser.avatar || null,
+            createdAt: "2024-01-01T00:00:00Z"
         },
-        likes: 156,
-        comments: 8,
-        isLiked: false,
+        userId: 1,
+        thumbnailUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=500&fit=crop",
+        viewCount: 100,
+        isPublic: true,
+        deletedAt: null,
+        likesCount: 156,
+        commentsCount: 8,
+        isLikedByCurrentUser: false,
+        isOwner: true,
+        updatedAt: "2024-01-10T18:45:00Z",
         createdAt: "2024-01-10T18:45:00Z",
     },
 ];
@@ -201,7 +217,7 @@ export default function ProfilePage() {
                                                 : theme.theme.colors.primary.black,
                                         }}
                                     >
-                                        {mockUser.stats.followers.toLocaleString()}
+                                        {mockUser.stats.followersCount.toLocaleString()}
                                     </div>
                                     <div 
                                         className="text-sm"
@@ -223,7 +239,7 @@ export default function ProfilePage() {
                                                 : theme.theme.colors.primary.black,
                                         }}
                                     >
-                                        {mockUser.stats.following}
+                                        {mockUser.stats.followingCount}
                                     </div>
                                     <div 
                                         className="text-sm"

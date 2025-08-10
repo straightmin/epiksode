@@ -4,137 +4,30 @@ import { useState, useCallback } from "react";
 import { useThemeContext, DarkModeToggle } from "../../frontend-theme-system/components/ThemeProvider";
 import PhotoGrid from "../components/photos/PhotoGrid";
 import PhotoModal from "../components/photos/PhotoModal";
-
-// 임시 목업 데이터
-const mockPhotos = [
-    {
-        id: "1",
-        imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
-        title: "산속의 아침",
-        description: "새벽 안개가 피어오르는 산속에서 맞이한 평화로운 아침의 순간입니다.",
-        photographer: { 
-            id: "user1", 
-            name: "김자연", 
-            username: "nature_kim", 
-            avatar: "", 
-            isFollowing: false 
-        },
-        likes: 1247,
-        comments: 23,
-        isLiked: false,
-        createdAt: "2024-08-09T06:30:00Z",
-    },
-    {
-        id: "2",
-        imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=500&fit=crop",
-        title: "도시의 야경",
-        description: "번화가 네온사인이 만들어내는 환상적인 밤의 풍경",
-        photographer: { 
-            id: "user2", 
-            name: "박도시", 
-            username: "city_park", 
-            avatar: "", 
-            isFollowing: true 
-        },
-        likes: 892,
-        comments: 41,
-        isLiked: true,
-        createdAt: "2024-08-08T22:15:00Z",
-    },
-    {
-        id: "3",
-        imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=700&fit=crop",
-        title: "숲속의 오솔길",
-        description: "햇살이 스며드는 숲속 길을 따라 걸으며 찍은 사진",
-        photographer: { 
-            id: "user3", 
-            name: "이숲길", 
-            username: "forest_lee", 
-            avatar: "", 
-            isFollowing: false 
-        },
-        likes: 564,
-        comments: 15,
-        isLiked: false,
-        createdAt: "2024-08-07T14:20:00Z",
-    },
-    {
-        id: "4",
-        imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=450&fit=crop",
-        title: "바다와 구름",
-        description: "푸른 바다 위로 펼쳐진 구름의 장관",
-        photographer: { 
-            id: "user4", 
-            name: "최바다", 
-            username: "sea_choi", 
-            avatar: "", 
-            isFollowing: true 
-        },
-        likes: 1523,
-        comments: 67,
-        isLiked: true,
-        createdAt: "2024-08-06T16:45:00Z",
-    },
-    {
-        id: "5",
-        imageUrl: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=550&fit=crop",
-        title: "사막의 별",
-        description: "깊은 밤 사막에서 바라본 은하수의 장엄함",
-        photographer: { 
-            id: "user5", 
-            name: "정별빛", 
-            username: "star_jung", 
-            avatar: "", 
-            isFollowing: false 
-        },
-        likes: 2156,
-        comments: 89,
-        isLiked: false,
-        createdAt: "2024-08-05T23:30:00Z",
-    },
-    {
-        id: "6",
-        imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=350&fit=crop",
-        title: "꽃밭의 오후",
-        description: "따스한 봄날 꽃밭에서 만난 작은 나비",
-        photographer: { 
-            id: "user6", 
-            name: "한꽃님", 
-            username: "flower_han", 
-            avatar: "", 
-            isFollowing: false 
-        },
-        likes: 734,
-        comments: 28,
-        isLiked: false,
-        createdAt: "2024-08-04T13:15:00Z",
-    },
-];
+import { usePhotos } from "../hooks/usePhotos";
 
 export default function Home() {
     const { theme, isDark } = useThemeContext();
-    const [photos, setPhotos] = useState(mockPhotos);
-    const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+    
+    // 사진 데이터 관리 훅
+    const { 
+        photos, 
+        loading, 
+        initialLoading, 
+        hasMore, 
+        error, 
+        loadMore,
+        toggleLike,
+        clearError 
+    } = usePhotos({
+        limit: 10,
+        sortBy: 'latest'
+    });
+    
+    const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleLike = useCallback((photoId: string) => {
-        setPhotos(prevPhotos =>
-            prevPhotos.map(photo =>
-                photo.id === photoId
-                    ? {
-                        ...photo,
-                        isLiked: !photo.isLiked,
-                        likes: photo.isLiked ? photo.likes - 1 : photo.likes + 1,
-                    }
-                    : photo
-            )
-        );
-    }, []);
-
-
-    const handlePhotoClick = useCallback((photoId: string) => {
+    const handlePhotoClick = useCallback((photoId: number) => {
         setSelectedPhotoId(photoId);
         setIsModalOpen(true);
     }, []);
@@ -158,43 +51,10 @@ export default function Home() {
         setSelectedPhotoId(photos[prevIndex].id);
     }, [selectedPhotoId, photos]);
 
-    const handleFollow = useCallback((userId: string) => {
-        setPhotos(prevPhotos =>
-            prevPhotos.map(photo =>
-                photo.photographer.id === userId
-                    ? {
-                        ...photo,
-                        photographer: {
-                            ...photo.photographer,
-                            isFollowing: !photo.photographer.isFollowing,
-                        },
-                    }
-                    : photo
-            )
-        );
+    const handleFollow = useCallback((userId: number) => {
+        // TODO: 팔로우 기능 구현 예정
+        console.log('Follow user:', userId);
     }, []);
-
-    const handleLoadMore = useCallback(() => {
-        if (loading) return;
-        
-        setLoading(true);
-        // 실제 환경에서는 API 호출
-        setTimeout(() => {
-            // 더 많은 사진 추가 (실제로는 API에서 가져옴)
-            const newPhotos = mockPhotos.slice(0, 3).map((photo, index) => ({
-                ...photo,
-                id: `${photo.id}-page${Math.floor(photos.length / 3)}-item${index}`,
-            }));
-            
-            setPhotos(prev => [...prev, ...newPhotos]);
-            setLoading(false);
-            
-            // 예시로 3번 로드 후 더 이상 로드할 사진이 없다고 가정
-            if (photos.length > 15) {
-                setHasMore(false);
-            }
-        }, 1000);
-    }, [loading, photos.length]);
 
     return (
         <div 
@@ -212,14 +72,40 @@ export default function Home() {
 
             {/* Main Feed Content */}
             <div className="max-w-screen-xl mx-auto">
-                <PhotoGrid
-                    photos={photos}
-                    onLike={handleLike}
-                    onPhotoClick={handlePhotoClick}
-                    onLoadMore={handleLoadMore}
-                    hasMore={hasMore}
-                    loading={loading}
-                />
+                {error && (
+                    <div className="m-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        <div className="flex items-center justify-between">
+                            <span>{error}</span>
+                            <button 
+                                onClick={clearError}
+                                className="text-red-500 hover:text-red-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                {initialLoading || (photos.length === 0 && loading) ? (
+                    <div className="flex justify-center py-12">
+                        <div 
+                            className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
+                            style={{
+                                borderColor: theme.theme.colors.primary.purple,
+                                borderTopColor: "transparent",
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <PhotoGrid
+                        photos={photos}
+                        onLike={toggleLike}
+                        onPhotoClick={handlePhotoClick}
+                        onLoadMore={loadMore}
+                        hasMore={hasMore}
+                        loading={loading}
+                    />
+                )}
             </div>
 
             {/* Status Badge */}
@@ -254,8 +140,8 @@ export default function Home() {
                         onPrevious={handleModalPrevious}
                         hasNext={currentIndex < photos.length - 1}
                         hasPrevious={currentIndex > 0}
-                        onLike={handleLike}
-                            onFollow={handleFollow}
+                        onLike={toggleLike}
+                        onFollow={handleFollow}
                     />
                 );
             })()}

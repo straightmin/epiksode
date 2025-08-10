@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoGrid from "../../components/photos/PhotoGrid";
 import { Search, Grid, List } from "lucide-react";
-import { PhotoData } from "@/types";
+import { PhotoDetail } from "@/types";
+import { apiClient } from '@/lib/api-client';
 
 // 임시 검색 결과 데이터
 const mockSearchResults = {
@@ -72,7 +73,7 @@ function SearchContent() {
     const searchParams = useSearchParams();
     const query = searchParams?.get('q') || '';
     
-    const [searchResults, setSearchResults] = useState<PhotoData[]>([]);
+    const [searchResults, setSearchResults] = useState<PhotoDetail[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'users'>('all');
     const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'relevant'>('relevant');
@@ -103,8 +104,8 @@ function SearchContent() {
                 photo.id === photoId
                     ? {
                         ...photo,
-                        isLiked: !photo.isLiked,
-                        likes: photo.isLiked ? photo.likes - 1 : photo.likes + 1,
+                        isLikedByCurrentUser: !photo.isLikedByCurrentUser,
+                        likesCount: photo.isLikedByCurrentUser ? photo.likesCount - 1 : photo.likesCount + 1,
                     }
                     : photo
             )
