@@ -53,3 +53,11 @@ GEMINI.md
 
 # frontend theme guidelines
 /frontend-theme-system
+
+# backup
+*.backup
+
+# log files
+*.log
+*.err
+*.error
