@@ -284,7 +284,7 @@ export default function Home() {
             // 더 많은 사진 추가 (실제로는 API에서 가져옴)
             const newPhotos = mockPhotos.slice(0, 3).map((photo, index) => ({
                 ...photo,
-                id: `${photo.id}-${Date.now()}-${index}`,
+                id: `${photo.id}-page${Math.floor(photos.length / 3)}-item${index}`,
             }));
             
             setPhotos(prev => [...prev, ...newPhotos]);
@@ -336,20 +336,32 @@ export default function Home() {
             </div>
 
             {/* Photo Modal */}
-            {selectedPhotoId && (
-                <PhotoModal
-                    photo={photos.find(p => p.id === selectedPhotoId)!}
-                    isOpen={isModalOpen}
-                    onClose={handleModalClose}
-                    onNext={handleModalNext}
-                    onPrevious={handleModalPrevious}
-                    hasNext={photos.findIndex(p => p.id === selectedPhotoId) < photos.length - 1}
-                    hasPrevious={photos.findIndex(p => p.id === selectedPhotoId) > 0}
-                    onLike={handleLike}
-                    onBookmark={handleBookmark}
-                    onFollow={handleFollow}
-                />
-            )}
+            {selectedPhotoId && (() => {
+                const selectedPhoto = photos.find(p => p.id === selectedPhotoId);
+                
+                // 사진을 찾지 못한 경우 안전하게 처리
+                if (!selectedPhoto) {
+                    console.warn(`Photo with id ${selectedPhotoId} not found`);
+                    return null;
+                }
+                
+                const currentIndex = photos.findIndex(p => p.id === selectedPhotoId);
+                
+                return (
+                    <PhotoModal
+                        photo={selectedPhoto}
+                        isOpen={isModalOpen}
+                        onClose={handleModalClose}
+                        onNext={handleModalNext}
+                        onPrevious={handleModalPrevious}
+                        hasNext={currentIndex < photos.length - 1}
+                        hasPrevious={currentIndex > 0}
+                        onLike={handleLike}
+                        onBookmark={handleBookmark}
+                        onFollow={handleFollow}
+                    />
+                );
+            })()}
         </div>
     );
 }

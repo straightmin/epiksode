@@ -17,56 +17,7 @@ import {
     Flag,
     Eye,
 } from "lucide-react";
-
-interface PhotoData {
-    id: string;
-    imageUrl: string;
-    title: string;
-    description?: string;
-    photographer: {
-        id: string;
-        name: string;
-        username: string;
-        avatar?: string;
-        isFollowing?: boolean;
-    };
-    likes: number;
-    comments: number;
-    views: number;
-    isLiked: boolean;
-    isBookmarked: boolean;
-    isEpicMoment?: boolean;
-    tags?: string[];
-    location?: string;
-    camera?: {
-        make?: string;
-        model?: string;
-        lens?: string;
-        settings?: {
-            aperture?: string;
-            shutterSpeed?: string;
-            iso?: string;
-            focalLength?: string;
-        };
-    };
-    createdAt: string;
-}
-
-interface Comment {
-    id: string;
-    user: {
-        name: string;
-        username: string;
-        avatar?: string;
-    };
-    content: string;
-    createdAt: string;
-    likes: number;
-    isLiked: boolean;
-    replies?: Comment[];
-    isReply?: boolean;
-    parentId?: string;
-}
+import { PhotoData, Comment } from "@/types";
 
 interface PhotoModalProps {
     photo: PhotoData;
@@ -187,7 +138,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
         if (replyingTo) {
             // 답글 추가
             const reply: Comment = {
-                id: `${replyingTo}-${Date.now()}`,
+                id: `reply-${replyingTo}-${comments.length}-${Math.random().toString(36).substring(7)}`,
                 user: {
                     name: "현재 사용자",
                     username: "current_user",
@@ -206,7 +157,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     comment.id === replyingTo
                         ? {
                             ...comment,
-                            replies: [reply, ...(comment.replies || [])],
+                            replies: [...(comment.replies || []), reply], // 시간순 정렬 (새 답글을 뒤에 추가)
                         }
                         : comment
                 )
@@ -215,7 +166,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
         } else {
             // 새 댓글 추가
             const comment: Comment = {
-                id: Date.now().toString(),
+                id: `comment-${comments.length}-${Math.random().toString(36).substring(7)}`,
                 user: {
                     name: "현재 사용자",
                     username: "current_user",
@@ -900,7 +851,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                             카메라 정보
                                         </h4>
                                         <div className="space-y-1 text-sm">
-                                            {photo.camera.make && (
+                                            {typeof photo.camera === 'object' && photo.camera.make && (
                                                 <div
                                                     className="flex justify-between"
                                                     style={{
@@ -910,10 +861,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     }}
                                                 >
                                                     <span>카메라</span>
-                                                    <span>{photo.camera.make} {photo.camera.model}</span>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                    <span>{(photo.camera as any).make} {(photo.camera as any).model}</span>
                                                 </div>
                                             )}
-                                            {photo.camera.lens && (
+                                            {typeof photo.camera === 'object' && photo.camera.lens && (
                                                 <div
                                                     className="flex justify-between"
                                                     style={{
@@ -923,10 +875,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     }}
                                                 >
                                                     <span>렌즈</span>
-                                                    <span>{photo.camera.lens}</span>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                    <span>{(photo.camera as any).lens}</span>
                                                 </div>
                                             )}
-                                            {photo.camera.settings?.aperture && (
+                                            {typeof photo.camera === 'object' && photo.camera.settings?.aperture && (
                                                 <div
                                                     className="flex justify-between"
                                                     style={{
@@ -936,10 +889,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     }}
                                                 >
                                                     <span>조리개</span>
-                                                    <span>{photo.camera.settings.aperture}</span>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                    <span>{(photo.camera as any).settings.aperture}</span>
                                                 </div>
                                             )}
-                                            {photo.camera.settings?.shutterSpeed && (
+                                            {typeof photo.camera === 'object' && photo.camera.settings?.shutterSpeed && (
                                                 <div
                                                     className="flex justify-between"
                                                     style={{
@@ -949,10 +903,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     }}
                                                 >
                                                     <span>셔터스피드</span>
-                                                    <span>{photo.camera.settings.shutterSpeed}</span>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                    <span>{(photo.camera as any).settings.shutterSpeed}</span>
                                                 </div>
                                             )}
-                                            {photo.camera.settings?.iso && (
+                                            {typeof photo.camera === 'object' && photo.camera.settings?.iso && (
                                                 <div
                                                     className="flex justify-between"
                                                     style={{
@@ -962,10 +917,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     }}
                                                 >
                                                     <span>ISO</span>
-                                                    <span>{photo.camera.settings.iso}</span>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                    <span>{(photo.camera as any).settings.iso}</span>
                                                 </div>
                                             )}
-                                            {photo.camera.settings?.focalLength && (
+                                            {typeof photo.camera === 'object' && photo.camera.settings?.focalLength && (
                                                 <div
                                                     className="flex justify-between"
                                                     style={{
@@ -975,7 +931,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     }}
                                                 >
                                                     <span>초점거리</span>
-                                                    <span>{photo.camera.settings.focalLength}</span>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                    <span>{(photo.camera as any).settings.focalLength}</span>
                                                 </div>
                                             )}
                                         </div>

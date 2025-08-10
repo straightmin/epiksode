@@ -3,22 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoCard from "./PhotoCard";
-
-interface PhotoData {
-    id: string;
-    imageUrl: string;
-    title: string;
-    description?: string;
-    photographer: {
-        name: string;
-        avatar?: string;
-    };
-    likes: number;
-    comments: number;
-    isLiked: boolean;
-    isBookmarked: boolean;
-    isEpicMoment?: boolean;
-}
+import { PhotoData } from "@/types";
 
 interface PhotoGridProps {
     photos: PhotoData[];
@@ -118,6 +103,9 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
 
     const photoColumns = distributePhotos();
 
+    // 스켈레톤 높이 패턴 (일관성 있는 로딩 경험 제공)
+    const SKELETON_HEIGHTS = [250, 300, 280, 320, 270, 290, 310, 260, 340, 230];
+    
     // 로딩 스켈레톤 생성
     const generateLoadingCards = (count: number) => {
         return Array.from({ length: count }, (_, index) => (
@@ -126,7 +114,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                 className="animate-pulse rounded-lg mb-4"
                 style={{
                     backgroundColor: theme.theme.colors.primary.purpleVeryLight,
-                    height: Math.floor(Math.random() * 200) + 200, // 랜덤 높이
+                    height: SKELETON_HEIGHTS[index % SKELETON_HEIGHTS.length], // 일관된 패턴 유지
                 }}
             />
         ));

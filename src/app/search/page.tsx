@@ -5,29 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoGrid from "../../components/photos/PhotoGrid";
 import { Search, Grid, List } from "lucide-react";
-
-interface PhotoData {
-    id: string;
-    imageUrl: string;
-    title: string;
-    description: string;
-    photographer: {
-        id: string;
-        name: string;
-        username: string;
-        avatar: string;
-        isFollowing: boolean;
-    };
-    likes: number;
-    comments: number;
-    views: number;
-    isLiked: boolean;
-    isBookmarked: boolean;
-    isEpicMoment?: boolean;
-    tags: string[];
-    location: string;
-    createdAt: string;
-}
+import { PhotoData } from "@/types";
 
 // 임시 검색 결과 데이터
 const mockSearchResults = {

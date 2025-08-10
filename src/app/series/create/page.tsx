@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { useThemeContext } from "../../../../frontend-theme-system/components/ThemeProvider";
 // import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { GripVertical, X, Plus, Save, ArrowUp, ArrowDown } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface SeriesPhoto {
     id: string;
@@ -82,7 +83,7 @@ export default function CreateSeriesPage() {
         };
 
         console.log('Saving series:', seriesData);
-        alert('시리즈가 성공적으로 생성되었습니다!');
+        toast.success('시리즈가 성공적으로 생성되었습니다!');
     }, [seriesTitle, seriesDescription, photos]);
 
     return (
@@ -305,7 +306,7 @@ export default function CreateSeriesPage() {
                             style={{
                                 borderColor: theme.theme.colors.primary.purple,
                                 color: theme.theme.colors.primary.purple,
-                                borderOpacity: 0.5,
+                                opacity: 0.8,
                             }}
                         >
                             <Plus size={20} />

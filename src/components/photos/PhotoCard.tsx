@@ -3,40 +3,7 @@
 import React, { useState } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Heart, Bookmark, Star, MessageCircle } from "lucide-react";
-
-interface PhotoData {
-    id: string;
-    imageUrl: string;
-    title: string;
-    description?: string;
-    photographer: {
-        id: string;
-        name: string;
-        username: string;
-        avatar?: string;
-        isFollowing?: boolean;
-    };
-    likes: number;
-    comments: number;
-    views: number;
-    isLiked: boolean;
-    isBookmarked: boolean;
-    isEpicMoment?: boolean;
-    tags?: string[];
-    location?: string;
-    camera?: {
-        make?: string;
-        model?: string;
-        lens?: string;
-        settings?: {
-            aperture?: string;
-            shutterSpeed?: string;
-            iso?: string;
-            focalLength?: string;
-        };
-    };
-    createdAt: string;
-}
+import { PhotoData } from "@/types";
 
 interface PhotoCardProps {
     photo: PhotoData;

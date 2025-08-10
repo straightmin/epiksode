@@ -28,21 +28,39 @@ const mockUserPhotos = [
         id: "p1",
         imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
         title: "산속의 아침",
-        photographer: { name: mockUser.name, avatar: "" },
+        description: "아침 안개가 자욱한 산맥의 모습",
+        photographer: { 
+            id: mockUser.id,
+            name: mockUser.name, 
+            username: mockUser.username,
+            avatar: mockUser.avatar || "",
+            isFollowing: false
+        },
         likes: 234,
         comments: 12,
+        views: 1500,
         isLiked: true,
         isBookmarked: false,
+        createdAt: "2024-01-15T09:30:00Z",
     },
     {
         id: "p2",
         imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=500&fit=crop",
         title: "도시의 야경",
-        photographer: { name: mockUser.name, avatar: "" },
+        description: "반짝이는 도시의 불빛들",
+        photographer: { 
+            id: mockUser.id,
+            name: mockUser.name, 
+            username: mockUser.username,
+            avatar: mockUser.avatar || "",
+            isFollowing: false
+        },
         likes: 156,
         comments: 8,
+        views: 890,
         isLiked: false,
         isBookmarked: true,
+        createdAt: "2024-01-10T18:45:00Z",
     },
 ];
 

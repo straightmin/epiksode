@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Upload, X, CheckCircle, AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface UploadFile {
     id: string;
@@ -27,7 +28,7 @@ export default function UploadPage() {
         const newFiles: UploadFile[] = [];
         Array.from(files).forEach((file) => {
             if (file.type.startsWith('image/')) {
-                const id = `${Date.now()}-${Math.random()}`;
+                const id = `file-${uploadFiles.length + newFiles.length}-${Math.random().toString(36).substring(7)}`;
                 const preview = URL.createObjectURL(file);
                 
                 newFiles.push({
@@ -139,7 +140,7 @@ export default function UploadPage() {
         setUploadFiles(prev => prev.filter(file => file.status !== 'completed'));
         
         // 홈페이지로 이동 (실제로는 router.push('/') 사용)
-        alert('사진이 성공적으로 업로드되었습니다!');
+        toast.success('사진이 성공적으로 업로드되었습니다!');
     }, [uploadFiles]);
 
     const completedCount = uploadFiles.filter(f => f.status === 'completed').length;

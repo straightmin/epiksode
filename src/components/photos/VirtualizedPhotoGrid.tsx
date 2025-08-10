@@ -3,40 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoCard from "./PhotoCard";
-
-interface PhotoData {
-    id: string;
-    imageUrl: string;
-    title: string;
-    description?: string;
-    photographer: {
-        id: string;
-        name: string;
-        username: string;
-        avatar?: string;
-        isFollowing?: boolean;
-    };
-    likes: number;
-    comments: number;
-    views: number;
-    isLiked: boolean;
-    isBookmarked: boolean;
-    isEpicMoment?: boolean;
-    tags?: string[];
-    location?: string;
-    camera?: {
-        make?: string;
-        model?: string;
-        lens?: string;
-        settings?: {
-            aperture?: string;
-            shutterSpeed?: string;
-            iso?: string;
-            focalLength?: string;
-        };
-    };
-    createdAt: string;
-}
+import { PhotoData } from "@/types";
 
 interface VirtualizedPhotoGridProps {
     photos: PhotoData[];
@@ -195,6 +162,15 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
         );
     }, [virtualizedData, itemHeight, onLike, onBookmark, onPhotoClick]);
 
+    // 스켈레톤 높이 패턴 (일관성 있는 로딩 경험 제공)
+    const SKELETON_HEIGHTS = useMemo(() => [
+        itemHeight - 30, 
+        itemHeight, 
+        itemHeight - 50, 
+        itemHeight + 20, 
+        itemHeight - 40
+    ], [itemHeight]);
+    
     // 스켈레톤 로딩 카드 생성 (성능 최적화)
     const skeletonCards = useMemo(() => {
         if (!loading) return null;
@@ -207,13 +183,13 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
                         className="animate-pulse rounded-lg"
                         style={{
                             backgroundColor: theme.theme.colors.primary.purpleVeryLight,
-                            height: Math.floor(Math.random() * 100) + itemHeight - 50,
+                            height: SKELETON_HEIGHTS[(columnIndex + cardIndex) % SKELETON_HEIGHTS.length],
                         }}
                     />
                 ))}
             </div>
         ));
-    }, [loading, columnCount, theme.theme.colors.primary.purpleVeryLight, itemHeight]);
+    }, [loading, columnCount, theme.theme.colors.primary.purpleVeryLight, SKELETON_HEIGHTS]);
 
     return (
         <div className="w-full h-full">
