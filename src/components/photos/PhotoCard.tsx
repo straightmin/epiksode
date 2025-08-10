@@ -2,20 +2,18 @@
 
 import React, { useState } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
-import { Heart, Bookmark, Star, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle } from "lucide-react";
 import { PhotoData } from "@/types";
 
 interface PhotoCardProps {
     photo: PhotoData;
     onLike?: (photoId: string) => void;
-    onBookmark?: (photoId: string) => void;
     onClick?: (photoId: string) => void;
 }
 
 const PhotoCard: React.FC<PhotoCardProps> = ({
     photo,
     onLike,
-    onBookmark,
     onClick,
 }) => {
     const { theme, isDark } = useThemeContext();
@@ -27,10 +25,6 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
         onLike?.(photo.id);
     };
 
-    const handleBookmark = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onBookmark?.(photo.id);
-    };
 
     const handleClick = () => {
         onClick?.(photo.id);
@@ -87,19 +81,6 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                     }}
                 />
 
-                {/* Epic Moment Badge */}
-                {photo.isEpicMoment && (
-                    <div
-                        className="absolute top-3 left-3 px-2 py-1 rounded-full flex items-center gap-1 text-xs font-bold"
-                        style={{
-                            backgroundColor: theme.theme.colors.accent.pink,
-                            color: theme.theme.colors.primary.white,
-                        }}
-                    >
-                        <Star size={12} fill="currentColor" />
-                        에픽소드
-                    </div>
-                )}
 
                 {/* Hover Overlay with Actions */}
                 <div
@@ -109,24 +90,6 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                 >
                     {/* Top Action Buttons */}
                     <div className="absolute top-3 right-3 flex gap-2">
-                        <button
-                            onClick={handleBookmark}
-                            className="p-2 rounded-full transition-all duration-200 hover:scale-110"
-                            style={{
-                                backgroundColor: photo.isBookmarked
-                                    ? theme.theme.colors.accent.yellow
-                                    : "rgba(255, 255, 255, 0.2)",
-                                color: photo.isBookmarked
-                                    ? theme.theme.colors.primary.white
-                                    : theme.theme.colors.primary.white,
-                                backdropFilter: "blur(10px)",
-                            }}
-                        >
-                            <Bookmark
-                                size={16}
-                                fill={photo.isBookmarked ? "currentColor" : "none"}
-                            />
-                        </button>
 
                         <button
                             onClick={handleLike}

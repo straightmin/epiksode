@@ -21,22 +21,7 @@ const mockPhotos = [
         },
         likes: 1247,
         comments: 23,
-        views: 5432,
         isLiked: false,
-        isBookmarked: false,
-        isEpicMoment: true,
-        location: "지리산 국립공원",
-        camera: {
-            make: "Canon",
-            model: "EOS R5",
-            lens: "RF 24-70mm f/2.8L",
-            settings: {
-                aperture: "f/8",
-                shutterSpeed: "1/125s",
-                iso: "ISO 400",
-                focalLength: "35mm"
-            }
-        },
         createdAt: "2024-08-09T06:30:00Z",
     },
     {
@@ -55,19 +40,7 @@ const mockPhotos = [
         comments: 41,
         views: 2156,
         isLiked: true,
-        isBookmarked: false,
         location: "강남역 일대",
-        camera: {
-            make: "Sony",
-            model: "α7R IV",
-            lens: "FE 16-35mm f/2.8 GM",
-            settings: {
-                aperture: "f/2.8",
-                shutterSpeed: "1/60s",
-                iso: "ISO 1600",
-                focalLength: "24mm"
-            }
-        },
         createdAt: "2024-08-08T22:15:00Z",
     },
     {
@@ -86,19 +59,7 @@ const mockPhotos = [
         comments: 15,
         views: 1234,
         isLiked: false,
-        isBookmarked: true,
         location: "북한산 둘레길",
-        camera: {
-            make: "Nikon",
-            model: "D850",
-            lens: "AF-S 24-120mm f/4G",
-            settings: {
-                aperture: "f/5.6",
-                shutterSpeed: "1/250s",
-                iso: "ISO 200",
-                focalLength: "50mm"
-            }
-        },
         createdAt: "2024-08-07T14:20:00Z",
     },
     {
@@ -117,20 +78,7 @@ const mockPhotos = [
         comments: 67,
         views: 3456,
         isLiked: true,
-        isBookmarked: true,
-        isEpicMoment: true,
         location: "제주도 우도",
-        camera: {
-            make: "Fujifilm",
-            model: "X-T4",
-            lens: "XF 16-80mm f/4",
-            settings: {
-                aperture: "f/8",
-                shutterSpeed: "1/500s",
-                iso: "ISO 100",
-                focalLength: "28mm"
-            }
-        },
         createdAt: "2024-08-06T16:45:00Z",
     },
     {
@@ -149,19 +97,7 @@ const mockPhotos = [
         comments: 89,
         views: 4321,
         isLiked: false,
-        isBookmarked: false,
         location: "몽골 고비사막",
-        camera: {
-            make: "Canon",
-            model: "EOS Ra",
-            lens: "RF 15-35mm f/2.8L",
-            settings: {
-                aperture: "f/2.8",
-                shutterSpeed: "20s",
-                iso: "ISO 3200",
-                focalLength: "24mm"
-            }
-        },
         createdAt: "2024-08-05T23:30:00Z",
     },
     {
@@ -180,19 +116,7 @@ const mockPhotos = [
         comments: 28,
         views: 1567,
         isLiked: false,
-        isBookmarked: false,
         location: "경주 불국사 일원",
-        camera: {
-            make: "Olympus",
-            model: "OM-D E-M1X",
-            lens: "M.Zuiko 60mm f/2.8 Macro",
-            settings: {
-                aperture: "f/5.6",
-                shutterSpeed: "1/320s",
-                iso: "ISO 200",
-                focalLength: "60mm"
-            }
-        },
         createdAt: "2024-08-04T13:15:00Z",
     },
 ];
@@ -219,15 +143,6 @@ export default function Home() {
         );
     }, []);
 
-    const handleBookmark = useCallback((photoId: string) => {
-        setPhotos(prevPhotos =>
-            prevPhotos.map(photo =>
-                photo.id === photoId
-                    ? { ...photo, isBookmarked: !photo.isBookmarked }
-                    : photo
-            )
-        );
-    }, []);
 
     const handlePhotoClick = useCallback((photoId: string) => {
         setSelectedPhotoId(photoId);
@@ -310,7 +225,6 @@ export default function Home() {
                 <PhotoGrid
                     photos={photos}
                     onLike={handleLike}
-                    onBookmark={handleBookmark}
                     onPhotoClick={handlePhotoClick}
                     onLoadMore={handleLoadMore}
                     hasMore={hasMore}
@@ -351,8 +265,7 @@ export default function Home() {
                         hasNext={currentIndex < photos.length - 1}
                         hasPrevious={currentIndex > 0}
                         onLike={handleLike}
-                        onBookmark={handleBookmark}
-                        onFollow={handleFollow}
+                            onFollow={handleFollow}
                     />
                 );
             })()}

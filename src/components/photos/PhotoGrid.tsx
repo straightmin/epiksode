@@ -8,7 +8,6 @@ import { PhotoData } from "@/types";
 interface PhotoGridProps {
     photos: PhotoData[];
     onLike?: (photoId: string) => void;
-    onBookmark?: (photoId: string) => void;
     onPhotoClick?: (photoId: string) => void;
     onLoadMore?: () => void;
     hasMore?: boolean;
@@ -19,7 +18,6 @@ interface PhotoGridProps {
 const PhotoGrid: React.FC<PhotoGridProps> = ({
     photos,
     onLike,
-    onBookmark,
     onPhotoClick,
     onLoadMore,
     hasMore = false,
@@ -137,7 +135,6 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                                 key={photo.id}
                                 photo={photo}
                                 onLike={onLike}
-                                onBookmark={onBookmark}
                                 onClick={onPhotoClick}
                             />
                         ))}

@@ -8,7 +8,6 @@ import { PhotoData } from "@/types";
 interface VirtualizedPhotoGridProps {
     photos: PhotoData[];
     onLike?: (photoId: string) => void;
-    onBookmark?: (photoId: string) => void;
     onPhotoClick?: (photoId: string) => void;
     onLoadMore?: () => void;
     hasMore?: boolean;
@@ -21,7 +20,6 @@ interface VirtualizedPhotoGridProps {
 const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
     photos,
     onLike,
-    onBookmark,
     onPhotoClick,
     onLoadMore,
     hasMore = false,
@@ -146,7 +144,6 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
                         <PhotoCard
                             photo={photo}
                             onLike={onLike}
-                            onBookmark={onBookmark}
                             onClick={onPhotoClick}
                         />
                     </div>
@@ -160,7 +157,7 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
                 )}
             </div>
         );
-    }, [virtualizedData, itemHeight, onLike, onBookmark, onPhotoClick]);
+    }, [virtualizedData, itemHeight, onLike, onPhotoClick]);
 
     // 스켈레톤 높이 패턴 (일관성 있는 로딩 경험 제공)
     const SKELETON_HEIGHTS = useMemo(() => [

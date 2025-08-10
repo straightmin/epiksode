@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useThemeContext } from "../../../../frontend-theme-system/components/ThemeProvider";
 // import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { GripVertical, X, Plus, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { X, Plus, Save, ArrowUp, ArrowDown } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface SeriesPhoto {

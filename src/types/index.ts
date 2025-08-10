@@ -20,22 +20,7 @@ export interface PhotoData {
     };
     likes: number;
     comments: number;
-    views: number;
     isLiked: boolean;
-    isBookmarked: boolean;
-    isEpicMoment?: boolean;
-    camera?: string | {
-        make?: string;
-        model?: string;
-        lens?: string;
-        settings?: {
-            aperture?: string;
-            shutterSpeed?: string;
-            iso?: string;
-            focalLength?: string;
-        };
-    };
-    location?: string;
     createdAt: string;
 }
 
@@ -84,9 +69,7 @@ export interface SeriesData {
         avatar: string;
     };
     likes: number;
-    views: number;
     isLiked: boolean;
-    isBookmarked: boolean;
     createdAt: string;
 }
 

@@ -38,9 +38,7 @@ const mockUserPhotos = [
         },
         likes: 234,
         comments: 12,
-        views: 1500,
         isLiked: true,
-        isBookmarked: false,
         createdAt: "2024-01-15T09:30:00Z",
     },
     {
@@ -59,21 +57,19 @@ const mockUserPhotos = [
         comments: 8,
         views: 890,
         isLiked: false,
-        isBookmarked: true,
         createdAt: "2024-01-10T18:45:00Z",
     },
 ];
 
 export default function ProfilePage() {
     const { theme, isDark } = useThemeContext();
-    const [activeTab, setActiveTab] = useState<'photos' | 'series' | 'liked' | 'bookmarked'>('photos');
+    const [activeTab, setActiveTab] = useState<'photos' | 'series' | 'liked'>('photos');
     const [isFollowing, setIsFollowing] = useState(false);
 
     const tabs = [
         { key: 'photos' as const, label: '사진', icon: Camera, count: mockUser.stats.photos },
         { key: 'series' as const, label: '시리즈', icon: Bookmark, count: 3 },
         { key: 'liked' as const, label: '좋아요', icon: Heart, count: 89 },
-        { key: 'bookmarked' as const, label: '북마크', icon: Bookmark, count: 24 },
     ];
 
     return (
@@ -341,7 +337,6 @@ export default function ProfilePage() {
                             >
                                 {activeTab === 'series' && '아직 시리즈가 없습니다'}
                                 {activeTab === 'liked' && '좋아요한 사진이 없습니다'}
-                                {activeTab === 'bookmarked' && '북마크한 사진이 없습니다'}
                             </div>
                         </div>
                     )}

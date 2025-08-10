@@ -24,11 +24,7 @@ const mockSearchResults = {
             },
             likes: 1247,
             comments: 23,
-            views: 5432,
             isLiked: false,
-            isBookmarked: false,
-            isEpicMoment: true,
-            location: "지리산 국립공원",
             createdAt: "2024-08-09T06:30:00Z",
         },
         {
@@ -47,7 +43,6 @@ const mockSearchResults = {
             comments: 15,
             views: 1234,
             isLiked: false,
-            isBookmarked: true,
             location: "북한산 둘레길",
             createdAt: "2024-08-07T14:20:00Z",
         },
@@ -69,8 +64,6 @@ const mockSearchResults = {
             comments: 41,
             views: 2156,
             isLiked: true,
-            isBookmarked: false,
-            location: "강남역 일대",
             createdAt: "2024-08-08T22:15:00Z",
         },
     ],
@@ -122,15 +115,6 @@ function SearchContent() {
     }, []);
 
     // 북마크 핸들러
-    const handleBookmark = useCallback((photoId: string) => {
-        setSearchResults(prevResults =>
-            prevResults.map(photo =>
-                photo.id === photoId
-                    ? { ...photo, isBookmarked: !photo.isBookmarked }
-                    : photo
-            )
-        );
-    }, []);
 
     // 사진 클릭 핸들러
     const handlePhotoClick = useCallback((photoId: string) => {
@@ -334,7 +318,6 @@ function SearchContent() {
                         <PhotoGrid
                             photos={searchResults}
                             onLike={handleLike}
-                            onBookmark={handleBookmark}
                             onPhotoClick={handlePhotoClick}
                             hasMore={false}
                             loading={false}

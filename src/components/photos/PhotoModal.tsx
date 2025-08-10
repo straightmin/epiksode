@@ -5,14 +5,12 @@ import { useThemeContext } from "../../../frontend-theme-system/components/Theme
 import {
     X,
     Heart,
-    Bookmark,
     Share2,
     Download,
     ChevronLeft,
     ChevronRight,
     MessageCircle,
     Send,
-    Star,
     MoreHorizontal,
     Flag,
     Eye,
@@ -28,7 +26,6 @@ interface PhotoModalProps {
     hasNext?: boolean;
     hasPrevious?: boolean;
     onLike?: (photoId: string) => void;
-    onBookmark?: (photoId: string) => void;
     onFollow?: (userId: string) => void;
 }
 
@@ -41,7 +38,6 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     hasNext = false,
     hasPrevious = false,
     onLike,
-    onBookmark,
     onFollow,
 }) => {
     const { theme, isDark } = useThemeContext();
@@ -108,16 +104,13 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     break;
                 case 'b':
                 case 'B':
-                    if (onBookmark) {
-                        onBookmark(photo.id);
-                    }
                     break;
             }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [isOpen, hasNext, hasPrevious, onNext, onPrevious, onClose, onLike, onBookmark, photo.id]);
+    }, [isOpen, hasNext, hasPrevious, onNext, onPrevious, onClose, onLike, photo.id]);
 
     // 모달 오픈 시 스크롤 방지
     useEffect(() => {
@@ -315,39 +308,13 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                         onError={() => setIsImageLoading(false)}
                     />
 
-                    {/* Epic Moment Badge */}
-                    {photo.isEpicMoment && (
-                        <div
-                            className="absolute top-4 left-4 px-3 py-1 rounded-full flex items-center gap-1 text-sm font-bold"
-                            style={{
-                                backgroundColor: theme.theme.colors.accent.pink,
-                                color: theme.theme.colors.primary.white,
-                            }}
-                        >
-                            <Star size={14} fill="currentColor" />
-                            에픽소드
-                        </div>
-                    )}
 
                     {/* Image Actions Overlay */}
                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <span className="text-white text-sm flex items-center gap-1">
-                                <Eye size={16} />
-                                {photo.views.toLocaleString()}
-                            </span>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => onBookmark?.(photo.id)}
-                                className="p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
-                            >
-                                <Bookmark
-                                    size={20}
-                                    fill={photo.isBookmarked ? "currentColor" : "none"}
-                                />
-                            </button>
                             
                             <button
                                 onClick={() => onLike?.(photo.id)}
@@ -522,7 +489,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 }}
                             >
                                 <Eye size={14} />
-                                {photo.views.toLocaleString()}
+0
                             </span>
                         </div>
 
@@ -837,134 +804,6 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
 
                         {activeTab === 'info' && (
                             <div className="p-4 space-y-4 overflow-y-auto h-full">
-                                {/* Camera Info */}
-                                {photo.camera && (
-                                    <div>
-                                        <h4
-                                            className="font-medium mb-2"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.white
-                                                    : theme.theme.colors.primary.black,
-                                            }}
-                                        >
-                                            카메라 정보
-                                        </h4>
-                                        <div className="space-y-1 text-sm">
-                                            {typeof photo.camera === 'object' && photo.camera.make && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>카메라</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).make} {(photo.camera as any).model}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.lens && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>렌즈</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).lens}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.aperture && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>조리개</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.aperture}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.shutterSpeed && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>셔터스피드</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.shutterSpeed}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.iso && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>ISO</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.iso}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.focalLength && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>초점거리</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.focalLength}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-
-                                {/* Location */}
-                                {photo.location && (
-                                    <div>
-                                        <h4
-                                            className="font-medium mb-2"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.white
-                                                    : theme.theme.colors.primary.black,
-                                            }}
-                                        >
-                                            촬영 장소
-                                        </h4>
-                                        <p
-                                            className="text-sm"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.gray
-                                                    : theme.theme.colors.primary.darkGray,
-                                            }}
-                                        >
-                                            {photo.location}
-                                        </p>
-                                    </div>
-                                )}
 
                                 {/* Report Button */}
                                 <button
