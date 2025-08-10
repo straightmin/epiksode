@@ -55,7 +55,6 @@ const mockUserPhotos = [
         },
         likes: 156,
         comments: 8,
-        views: 890,
         isLiked: false,
         createdAt: "2024-01-10T18:45:00Z",
     },

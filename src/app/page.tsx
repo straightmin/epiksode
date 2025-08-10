@@ -38,9 +38,7 @@ const mockPhotos = [
         },
         likes: 892,
         comments: 41,
-        views: 2156,
         isLiked: true,
-        location: "강남역 일대",
         createdAt: "2024-08-08T22:15:00Z",
     },
     {
@@ -57,9 +55,7 @@ const mockPhotos = [
         },
         likes: 564,
         comments: 15,
-        views: 1234,
         isLiked: false,
-        location: "북한산 둘레길",
         createdAt: "2024-08-07T14:20:00Z",
     },
     {
@@ -76,9 +72,7 @@ const mockPhotos = [
         },
         likes: 1523,
         comments: 67,
-        views: 3456,
         isLiked: true,
-        location: "제주도 우도",
         createdAt: "2024-08-06T16:45:00Z",
     },
     {
@@ -95,9 +89,7 @@ const mockPhotos = [
         },
         likes: 2156,
         comments: 89,
-        views: 4321,
         isLiked: false,
-        location: "몽골 고비사막",
         createdAt: "2024-08-05T23:30:00Z",
     },
     {
@@ -114,9 +106,7 @@ const mockPhotos = [
         },
         likes: 734,
         comments: 28,
-        views: 1567,
         isLiked: false,
-        location: "경주 불국사 일원",
         createdAt: "2024-08-04T13:15:00Z",
     },
 ];
