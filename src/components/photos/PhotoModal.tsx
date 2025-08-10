@@ -939,35 +939,6 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                     </div>
                                 )}
 
-                                {/* Tags */}
-                                {photo.tags && photo.tags.length > 0 && (
-                                    <div>
-                                        <h4
-                                            className="font-medium mb-2"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.white
-                                                    : theme.theme.colors.primary.black,
-                                            }}
-                                        >
-                                            태그
-                                        </h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {photo.tags.map((tag, index) => (
-                                                <span
-                                                    key={index}
-                                                    className="px-2 py-1 rounded-full text-xs"
-                                                    style={{
-                                                        backgroundColor: theme.theme.colors.primary.purpleVeryLight,
-                                                        color: theme.theme.colors.primary.purple,
-                                                    }}
-                                                >
-                                                    #{tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Location */}
                                 {photo.location && (

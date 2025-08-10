@@ -36,7 +36,6 @@ export interface PhotoData {
         };
     };
     location?: string;
-    tags?: string[];
     createdAt: string;
 }
 
@@ -126,7 +125,6 @@ export interface UserProfile {
  */
 export interface SearchFilters {
     query?: string;
-    tags?: string[];
     category?: 'all' | 'photos' | 'series' | 'users';
     sortBy?: 'latest' | 'popular' | 'trending';
     timeRange?: 'all' | 'today' | 'week' | 'month' | 'year';

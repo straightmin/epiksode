@@ -25,7 +25,6 @@ const mockPhotos = [
         isLiked: false,
         isBookmarked: false,
         isEpicMoment: true,
-        tags: ["자연", "안개", "산", "아침"],
         location: "지리산 국립공원",
         camera: {
             make: "Canon",
@@ -57,7 +56,6 @@ const mockPhotos = [
         views: 2156,
         isLiked: true,
         isBookmarked: false,
-        tags: ["도시", "야경", "네온", "밤"],
         location: "강남역 일대",
         camera: {
             make: "Sony",
@@ -89,7 +87,6 @@ const mockPhotos = [
         views: 1234,
         isLiked: false,
         isBookmarked: true,
-        tags: ["숲", "산책로", "햇살", "자연"],
         location: "북한산 둘레길",
         camera: {
             make: "Nikon",
@@ -122,7 +119,6 @@ const mockPhotos = [
         isLiked: true,
         isBookmarked: true,
         isEpicMoment: true,
-        tags: ["바다", "구름", "풍경", "자연"],
         location: "제주도 우도",
         camera: {
             make: "Fujifilm",
@@ -154,7 +150,6 @@ const mockPhotos = [
         views: 4321,
         isLiked: false,
         isBookmarked: false,
-        tags: ["별", "은하수", "사막", "밤하늘"],
         location: "몽골 고비사막",
         camera: {
             make: "Canon",
@@ -186,7 +181,6 @@ const mockPhotos = [
         views: 1567,
         isLiked: false,
         isBookmarked: false,
-        tags: ["꽃", "나비", "봄", "매크로"],
         location: "경주 불국사 일원",
         camera: {
             make: "Olympus",

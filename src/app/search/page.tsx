@@ -28,7 +28,6 @@ const mockSearchResults = {
             isLiked: false,
             isBookmarked: false,
             isEpicMoment: true,
-            tags: ["자연", "안개", "산", "아침"],
             location: "지리산 국립공원",
             createdAt: "2024-08-09T06:30:00Z",
         },
@@ -49,7 +48,6 @@ const mockSearchResults = {
             views: 1234,
             isLiked: false,
             isBookmarked: true,
-            tags: ["숲", "산책로", "햇살", "자연"],
             location: "북한산 둘레길",
             createdAt: "2024-08-07T14:20:00Z",
         },
@@ -72,7 +70,6 @@ const mockSearchResults = {
             views: 2156,
             isLiked: true,
             isBookmarked: false,
-            tags: ["도시", "야경", "네온", "밤"],
             location: "강남역 일대",
             createdAt: "2024-08-08T22:15:00Z",
         },
@@ -87,7 +84,7 @@ function SearchContent() {
     
     const [searchResults, setSearchResults] = useState<PhotoData[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'users' | 'tags'>('all');
+    const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'users'>('all');
     const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'relevant'>('relevant');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -145,7 +142,6 @@ function SearchContent() {
         { key: 'all' as const, label: '전체', count: searchResults.length },
         { key: 'photos' as const, label: '사진', count: searchResults.length },
         { key: 'users' as const, label: '사용자', count: 0 },
-        { key: 'tags' as const, label: '태그', count: 0 },
     ];
 
     return (
