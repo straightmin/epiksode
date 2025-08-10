@@ -3,12 +3,12 @@
 import React, { useState } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Heart, MessageCircle } from "lucide-react";
-import { PhotoData } from "@/types";
+import { PhotoDetail } from "@/types";
 
 interface PhotoCardProps {
-    photo: PhotoData;
-    onLike?: (photoId: string) => void;
-    onClick?: (photoId: string) => void;
+    photo: PhotoDetail;
+    onLike?: (photoId: number) => void;
+    onClick?: (photoId: number) => void;
 }
 
 const PhotoCard: React.FC<PhotoCardProps> = ({
@@ -95,10 +95,10 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                             onClick={handleLike}
                             className="p-2 rounded-full transition-all duration-200 hover:scale-110"
                             style={{
-                                backgroundColor: photo.isLiked
+                                backgroundColor: photo.isLikedByCurrentUser
                                     ? theme.theme.colors.accent.pink
                                     : "rgba(255, 255, 255, 0.2)",
-                                color: photo.isLiked
+                                color: photo.isLikedByCurrentUser
                                     ? theme.theme.colors.primary.white
                                     : theme.theme.colors.primary.white,
                                 backdropFilter: "blur(10px)",
@@ -106,7 +106,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                         >
                             <Heart
                                 size={16}
-                                fill={photo.isLiked ? "currentColor" : "none"}
+                                fill={photo.isLikedByCurrentUser ? "currentColor" : "none"}
                             />
                         </button>
                     </div>
@@ -123,10 +123,10 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                         )}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {photo.photographer.avatar ? (
+                                {photo.author?.profileImageUrl ? (
                                     <img
-                                        src={photo.photographer.avatar}
-                                        alt={photo.photographer.name}
+                                        src={photo.author.profileImageUrl}
+                                        alt={photo.author.username}
                                         className="w-6 h-6 rounded-full object-cover"
                                     />
                                 ) : (
@@ -138,11 +138,11 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                                             color: theme.theme.colors.primary.white,
                                         }}
                                     >
-                                        {photo.photographer.name.charAt(0).toUpperCase()}
+                                        {photo.author?.username?.charAt(0)?.toUpperCase() || '?'}
                                     </div>
                                 )}
                                 <span className="text-white/90 text-sm font-medium">
-                                    {photo.photographer.name}
+                                    {photo.author?.username || 'Unknown'}
                                 </span>
                             </div>
                         </div>
@@ -157,15 +157,15 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                         <div className="flex items-center gap-1">
                             <Heart
                                 size={14}
-                                className={photo.isLiked ? "text-pink-500" : ""}
+                                className={photo.isLikedByCurrentUser ? "text-pink-500" : ""}
                                 style={{
-                                    color: photo.isLiked
+                                    color: photo.isLikedByCurrentUser
                                         ? theme.theme.colors.accent.pink
                                         : isDark
                                         ? theme.theme.colors.primary.gray
                                         : theme.theme.colors.primary.darkGray,
                                 }}
-                                fill={photo.isLiked ? "currentColor" : "none"}
+                                fill={photo.isLikedByCurrentUser ? "currentColor" : "none"}
                             />
                             <span
                                 style={{
@@ -174,7 +174,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                                         : theme.theme.colors.primary.black,
                                 }}
                             >
-                                {photo.likes.toLocaleString()}
+                                {photo.likesCount.toLocaleString()}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -193,7 +193,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                                         : theme.theme.colors.primary.black,
                                 }}
                             >
-                                {photo.comments}
+                                {photo.commentsCount}
                             </span>
                         </div>
                     </div>

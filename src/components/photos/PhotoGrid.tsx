@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoCard from "./PhotoCard";
-import { PhotoData } from "@/types";
+import { PhotoDetail } from "@/types";
 
 interface PhotoGridProps {
-    photos: PhotoData[];
-    onLike?: (photoId: string) => void;
-    onPhotoClick?: (photoId: string) => void;
+    photos: PhotoDetail[];
+    onLike?: (photoId: number) => void;
+    onPhotoClick?: (photoId: number) => void;
     onLoadMore?: () => void;
     hasMore?: boolean;
     loading?: boolean;
@@ -84,7 +84,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
 
     // 사진들을 컬럼별로 분배
     const distributePhotos = useCallback(() => {
-        const columns: PhotoData[][] = Array.from({ length: columnCount }, () => []);
+        const columns: PhotoDetail[][] = Array.from({ length: columnCount }, () => []);
         const heights = initializeColumnHeights(columnCount);
 
         photos.forEach((photo) => {

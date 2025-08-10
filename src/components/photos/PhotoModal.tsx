@@ -15,18 +15,18 @@ import {
     Flag,
     Eye,
 } from "lucide-react";
-import { PhotoData, Comment } from "@/types";
+import { PhotoDetail, CommentDetail } from "@/types";
 
 interface PhotoModalProps {
-    photo: PhotoData;
+    photo: PhotoDetail;
     isOpen: boolean;
     onClose: () => void;
     onNext?: () => void;
     onPrevious?: () => void;
     hasNext?: boolean;
     hasPrevious?: boolean;
-    onLike?: (photoId: string) => void;
-    onFollow?: (userId: string) => void;
+    onLike?: (photoId: number) => void;
+    onFollow?: (userId: number) => void;
 }
 
 const PhotoModal: React.FC<PhotoModalProps> = ({
@@ -43,37 +43,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     const { theme, isDark } = useThemeContext();
     const [activeTab, setActiveTab] = useState<'comments' | 'info'>('comments');
     const [newComment, setNewComment] = useState("");
-    const [replyingTo, setReplyingTo] = useState<string | null>(null);
-    const [comments, setComments] = useState<Comment[]>([
-        {
-            id: "1",
-            user: { name: "김자연", username: "nature_kim", avatar: "" },
-            content: "정말 아름다운 사진이네요! 어느 장소인가요?",
-            createdAt: "2024-08-10T10:30:00Z",
-            likes: 5,
-            isLiked: false,
-            replies: [
-                {
-                    id: "1-1",
-                    user: { name: "현재 사용자", username: "current_user", avatar: "" },
-                    content: "지리산 국립공원입니다! 새벽 5시경에 찍었어요.",
-                    createdAt: "2024-08-10T10:45:00Z",
-                    likes: 2,
-                    isLiked: false,
-                    isReply: true,
-                    parentId: "1",
-                },
-            ],
-        },
-        {
-            id: "2",
-            user: { name: "박사진", username: "photo_park", avatar: "" },
-            content: "빛의 표현이 예술적입니다 👏",
-            createdAt: "2024-08-10T11:15:00Z",
-            likes: 3,
-            isLiked: true,
-            replies: [],
-        },
+    const [replyingTo, setReplyingTo] = useState<number | null>(null);
+    const [comments, setComments] = useState<CommentDetail[]>([
     ]);
     const [isImageLoading, setIsImageLoading] = useState(true);
 
@@ -179,7 +150,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     }, [newComment, replyingTo]);
 
     // 댓글 좋아요 핸들러
-    const handleCommentLike = useCallback((commentId: string, isReply: boolean = false, parentId?: string) => {
+    const handleCommentLike = useCallback((commentId: number, isReply: boolean = false, parentId?: number) => {
         if (isReply && parentId) {
             // 답글 좋아요
             setComments(prev =>
@@ -191,8 +162,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 reply.id === commentId
                                     ? {
                                         ...reply,
-                                        isLiked: !reply.isLiked,
-                                        likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1,
+                                        isLikedByCurrentUser: !reply.isLikedByCurrentUser,
+                                        likesCount: reply.isLikedByCurrentUser ? reply.likesCount - 1 : reply.likesCount + 1,
                                     }
                                     : reply
                             ),
@@ -207,8 +178,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     comment.id === commentId
                         ? {
                             ...comment,
-                            isLiked: !comment.isLiked,
-                            likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+                            isLikedByCurrentUser: !comment.isLikedByCurrentUser,
+                            likesCount: comment.isLikedByCurrentUser ? comment.likesCount - 1 : comment.likesCount + 1,
                         }
                         : comment
                 )
@@ -217,7 +188,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     }, []);
 
     // 답글 작성 시작
-    const handleStartReply = useCallback((commentId: string) => {
+    const handleStartReply = useCallback((commentId: number) => {
         setReplyingTo(commentId);
         setNewComment("");
     }, []);
@@ -322,8 +293,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                             >
                                 <Heart
                                     size={20}
-                                    fill={photo.isLiked ? "currentColor" : "none"}
-                                    className={photo.isLiked ? "text-red-500" : ""}
+                                    fill={photo.isLikedByCurrentUser ? "currentColor" : "none"}
+                                    className={photo.isLikedByCurrentUser ? "text-red-500" : ""}
                                 />
                             </button>
                             
@@ -357,10 +328,10 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     >
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                                {photo.photographer.avatar ? (
+                                {photo.author.profileImageUrl ? (
                                     <img
-                                        src={photo.photographer.avatar}
-                                        alt={photo.photographer.name}
+                                        src={photo.author.profileImageUrl}
+                                        alt={photo.author.username}
                                         className="w-12 h-12 rounded-full object-cover"
                                     />
                                 ) : (
@@ -371,7 +342,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                             color: theme.theme.colors.primary.white,
                                         }}
                                     >
-                                        {photo.photographer.name.charAt(0).toUpperCase()}
+                                        {photo.author.username.charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 
@@ -384,7 +355,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                 : theme.theme.colors.primary.black,
                                         }}
                                     >
-                                        {photo.photographer.name}
+                                        {photo.author.username}
                                     </h3>
                                     <p
                                         className="text-sm"
@@ -394,27 +365,24 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                 : theme.theme.colors.primary.darkGray,
                                         }}
                                     >
-                                        @{photo.photographer.username}
+                                        @{photo.author.username}
                                     </p>
                                 </div>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => onFollow?.(photo.photographer.id)}
+                                {/* 팔로우 버튼 - 백엔드 API 확장 필요 */}
+                                {/* <button
+                                    onClick={() => onFollow?.(photo.author.id)}
                                     className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
                                     style={{
-                                        backgroundColor: photo.photographer.isFollowing
-                                            ? 'transparent'
-                                            : theme.theme.colors.primary.purple,
-                                        color: photo.photographer.isFollowing
-                                            ? theme.theme.colors.primary.purple
-                                            : theme.theme.colors.primary.white,
+                                        backgroundColor: theme.theme.colors.primary.purple,
+                                        color: theme.theme.colors.primary.white,
                                         border: `1px solid ${theme.theme.colors.primary.purple}`,
                                     }}
                                 >
-                                    {photo.photographer.isFollowing ? '팔로잉' : '팔로우'}
-                                </button>
+                                    팔로우
+                                </button> */}
                                 
                                 <button
                                     className="p-2 rounded-full transition-colors"
@@ -457,15 +425,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                             <span
                                 className="flex items-center gap-1"
                                 style={{
-                                    color: photo.isLiked
+                                    color: photo.isLikedByCurrentUser
                                         ? theme.theme.colors.accent.pink
                                         : isDark
                                         ? theme.theme.colors.primary.gray
                                         : theme.theme.colors.primary.darkGray,
                                 }}
                             >
-                                <Heart size={14} fill={photo.isLiked ? "currentColor" : "none"} />
-                                {photo.likes.toLocaleString()}
+                                <Heart size={14} fill={photo.isLikedByCurrentUser ? "currentColor" : "none"} />
+                                {photo.likesCount.toLocaleString()}
                             </span>
                             
                             <span
@@ -477,7 +445,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 }}
                             >
                                 <MessageCircle size={14} />
-                                {photo.comments}
+                                {photo.commentsCount}
                             </span>
                             
                             <span
@@ -552,10 +520,10 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                         <div key={comment.id} className="space-y-3">
                                             {/* Main Comment */}
                                             <div className="flex items-start gap-3">
-                                                {comment.user.avatar ? (
+                                                {comment.author.profileImageUrl ? (
                                                     <img
-                                                        src={comment.user.avatar}
-                                                        alt={comment.user.name}
+                                                        src={comment.author.profileImageUrl}
+                                                        alt={comment.author.username}
                                                         className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                                                     />
                                                 ) : (
@@ -566,7 +534,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                             color: theme.theme.colors.primary.purple,
                                                         }}
                                                     >
-                                                        {comment.user.name.charAt(0).toUpperCase()}
+                                                        {comment.author.username.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                                 
@@ -580,7 +548,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                     : theme.theme.colors.primary.black,
                                                             }}
                                                         >
-                                                            {comment.user.name}
+                                                            {comment.author.username}
                                                         </span>
                                                         <span
                                                             className="text-xs"
@@ -610,15 +578,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                             onClick={() => handleCommentLike(comment.id)}
                                                             className="flex items-center gap-1 text-xs transition-colors hover:scale-105"
                                                             style={{
-                                                                color: comment.isLiked
+                                                                color: comment.isLikedByCurrentUser
                                                                     ? theme.theme.colors.accent.pink
                                                                     : isDark
                                                                     ? theme.theme.colors.primary.gray
                                                                     : theme.theme.colors.primary.darkGray,
                                                             }}
                                                         >
-                                                            <Heart size={12} fill={comment.isLiked ? "currentColor" : "none"} />
-                                                            {comment.likes > 0 && comment.likes}
+                                                            <Heart size={12} fill={comment.isLikedByCurrentUser ? "currentColor" : "none"} />
+                                                            {comment.likesCount > 0 && comment.likesCount}
                                                         </button>
                                                         
                                                         <button
@@ -643,10 +611,10 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                 <div className="ml-11 space-y-3">
                                                     {comment.replies.map((reply) => (
                                                         <div key={reply.id} className="flex items-start gap-3">
-                                                            {reply.user.avatar ? (
+                                                            {reply.author.profileImageUrl ? (
                                                                 <img
-                                                                    src={reply.user.avatar}
-                                                                    alt={reply.user.name}
+                                                                    src={reply.author.profileImageUrl}
+                                                                    alt={reply.author.username}
                                                                     className="w-6 h-6 rounded-full object-cover flex-shrink-0"
                                                                 />
                                                             ) : (
@@ -657,7 +625,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                         color: theme.theme.colors.primary.purple,
                                                                     }}
                                                                 >
-                                                                    {reply.user.name.charAt(0).toUpperCase()}
+                                                                    {reply.author.username.charAt(0).toUpperCase()}
                                                                 </div>
                                                             )}
                                                             
@@ -671,7 +639,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                                 : theme.theme.colors.primary.black,
                                                                         }}
                                                                     >
-                                                                        {reply.user.name}
+                                                                        {reply.author.username}
                                                                     </span>
                                                                     <span
                                                                         className="text-xs"
@@ -700,15 +668,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                     onClick={() => handleCommentLike(reply.id, true, comment.id)}
                                                                     className="flex items-center gap-1 text-xs transition-colors hover:scale-105"
                                                                     style={{
-                                                                        color: reply.isLiked
+                                                                        color: reply.isLikedByCurrentUser
                                                                             ? theme.theme.colors.accent.pink
                                                                             : isDark
                                                                             ? theme.theme.colors.primary.gray
                                                                             : theme.theme.colors.primary.darkGray,
                                                                     }}
                                                                 >
-                                                                    <Heart size={10} fill={reply.isLiked ? "currentColor" : "none"} />
-                                                                    {reply.likes > 0 && reply.likes}
+                                                                    <Heart size={10} fill={reply.isLikedByCurrentUser ? "currentColor" : "none"} />
+                                                                    {reply.likesCount > 0 && reply.likesCount}
                                                                 </button>
                                                             </div>
                                                         </div>
