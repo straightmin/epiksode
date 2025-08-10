@@ -10,14 +10,32 @@ interface PhotoData {
     title: string;
     description?: string;
     photographer: {
+        id: string;
         name: string;
+        username: string;
         avatar?: string;
+        isFollowing?: boolean;
     };
     likes: number;
     comments: number;
+    views: number;
     isLiked: boolean;
     isBookmarked: boolean;
-    isEpicMoment?: boolean; // 에픽소드 특별 표시
+    isEpicMoment?: boolean;
+    tags?: string[];
+    location?: string;
+    camera?: {
+        make?: string;
+        model?: string;
+        lens?: string;
+        settings?: {
+            aperture?: string;
+            shutterSpeed?: string;
+            iso?: string;
+            focalLength?: string;
+        };
+    };
+    createdAt: string;
 }
 
 interface PhotoCardProps {

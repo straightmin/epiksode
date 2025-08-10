@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback } from "react";
 import { useThemeContext } from "../../../../frontend-theme-system/components/ThemeProvider";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { GripVertical, X, Plus, Save } from "lucide-react";
+// import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { GripVertical, X, Plus, Save, ArrowUp, ArrowDown } from "lucide-react";
 
 interface SeriesPhoto {
     id: string;
@@ -37,21 +37,35 @@ export default function CreateSeriesPage() {
         },
     ]);
 
-    const handleDragEnd = useCallback((result: { destination?: { index: number }, source: { index: number } }) => {
-        if (!result.destination) return;
+    const movePhotoUp = useCallback((photoId: string) => {
+        setPhotos(prevPhotos => {
+            const currentIndex = prevPhotos.findIndex(p => p.id === photoId);
+            if (currentIndex <= 0) return prevPhotos;
+            
+            const newPhotos = [...prevPhotos];
+            [newPhotos[currentIndex - 1], newPhotos[currentIndex]] = [newPhotos[currentIndex], newPhotos[currentIndex - 1]];
+            
+            return newPhotos.map((photo, index) => ({
+                ...photo,
+                order: index,
+            }));
+        });
+    }, []);
 
-        const items = Array.from(photos);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-
-        // 순서 업데이트
-        const updatedPhotos = items.map((photo, index) => ({
-            ...photo,
-            order: index,
-        }));
-
-        setPhotos(updatedPhotos);
-    }, [photos]);
+    const movePhotoDown = useCallback((photoId: string) => {
+        setPhotos(prevPhotos => {
+            const currentIndex = prevPhotos.findIndex(p => p.id === photoId);
+            if (currentIndex >= prevPhotos.length - 1) return prevPhotos;
+            
+            const newPhotos = [...prevPhotos];
+            [newPhotos[currentIndex], newPhotos[currentIndex + 1]] = [newPhotos[currentIndex + 1], newPhotos[currentIndex]];
+            
+            return newPhotos.map((photo, index) => ({
+                ...photo,
+                order: index,
+            }));
+        });
+    }, []);
 
     const removePhoto = useCallback((photoId: string) => {
         setPhotos(prev => prev.filter(photo => photo.id !== photoId));
@@ -194,107 +208,96 @@ export default function CreateSeriesPage() {
                                     : theme.theme.colors.primary.black,
                             }}
                         >
-                            드래그해서 순서 변경
+                            사진 순서 편집
                         </h3>
 
-                        <DragDropContext onDragEnd={handleDragEnd}>
-                            <Droppable droppableId="photos">
-                                {(provided) => (
-                                    <div
-                                        {...provided.droppableProps}
-                                        ref={provided.innerRef}
-                                        className="space-y-3"
-                                    >
-                                        {photos.map((photo, index) => (
-                                            <Draggable
-                                                key={photo.id}
-                                                draggableId={photo.id}
-                                                index={index}
-                                            >
-                                                {(provided, snapshot) => (
-                                                    <div
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        className={`
-                                                            flex items-center gap-3 p-3 rounded-lg border transition-all duration-200
-                                                            ${snapshot.isDragging ? 'scale-105 shadow-lg' : ''}
-                                                        `}
-                                                        style={{
-                                                            backgroundColor: isDark
-                                                                ? theme.theme.colors.background.dark
-                                                                : theme.theme.colors.background.main,
-                                                            borderColor: snapshot.isDragging
-                                                                ? theme.theme.colors.primary.purple
-                                                                : isDark
-                                                                ? theme.theme.colors.primary.darkGray
-                                                                : theme.theme.colors.primary.purpleVeryLight,
-                                                            ...provided.draggableProps.style,
-                                                        }}
-                                                    >
-                                                        {/* Drag Handle */}
-                                                        <div
-                                                            {...provided.dragHandleProps}
-                                                            className="cursor-grab active:cursor-grabbing"
-                                                            style={{
-                                                                color: isDark
-                                                                    ? theme.theme.colors.primary.gray
-                                                                    : theme.theme.colors.primary.darkGray,
-                                                            }}
-                                                        >
-                                                            <GripVertical size={20} />
-                                                        </div>
-
-                                                        {/* Order Number */}
-                                                        <div
-                                                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                                                            style={{
-                                                                backgroundColor: theme.theme.colors.primary.purple,
-                                                                color: theme.theme.colors.primary.white,
-                                                            }}
-                                                        >
-                                                            {index + 1}
-                                                        </div>
-
-                                                        {/* Photo Preview */}
-                                                        <img
-                                                            src={photo.imageUrl}
-                                                            alt={photo.title}
-                                                            className="w-16 h-12 object-cover rounded"
-                                                        />
-
-                                                        {/* Photo Info */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <p
-                                                                className="font-medium truncate"
-                                                                style={{
-                                                                    color: isDark
-                                                                        ? theme.theme.colors.primary.white
-                                                                        : theme.theme.colors.primary.black,
-                                                                }}
-                                                            >
-                                                                {photo.title}
-                                                            </p>
-                                                        </div>
-
-                                                        {/* Remove Button */}
-                                                        <button
-                                                            onClick={() => removePhoto(photo.id)}
-                                                            className="p-1 rounded transition-colors hover:bg-red-100"
-                                                            style={{
-                                                                color: theme.theme.colors.accent.pink,
-                                                            }}
-                                                        >
-                                                            <X size={16} />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
+                        <div className="space-y-3">
+                            {photos.map((photo, index) => (
+                                <div
+                                    key={photo.id}
+                                    className="flex items-center gap-3 p-3 rounded-lg border transition-all duration-200"
+                                    style={{
+                                        backgroundColor: isDark
+                                            ? theme.theme.colors.background.dark
+                                            : theme.theme.colors.background.main,
+                                        borderColor: isDark
+                                            ? theme.theme.colors.primary.darkGray
+                                            : theme.theme.colors.primary.purpleVeryLight,
+                                    }}
+                                >
+                                    {/* Order Controls */}
+                                    <div className="flex flex-col gap-1">
+                                        <button
+                                            onClick={() => movePhotoUp(photo.id)}
+                                            disabled={index === 0}
+                                            className="p-1 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                            style={{
+                                                color: isDark
+                                                    ? theme.theme.colors.primary.gray
+                                                    : theme.theme.colors.primary.darkGray,
+                                            }}
+                                        >
+                                            <ArrowUp size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => movePhotoDown(photo.id)}
+                                            disabled={index === photos.length - 1}
+                                            className="p-1 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                            style={{
+                                                color: isDark
+                                                    ? theme.theme.colors.primary.gray
+                                                    : theme.theme.colors.primary.darkGray,
+                                            }}
+                                        >
+                                            <ArrowDown size={14} />
+                                        </button>
                                     </div>
-                                )}
-                            </Droppable>
-                        </DragDropContext>
+
+                                    {/* Order Number */}
+                                    <div
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                        style={{
+                                            backgroundColor: theme.theme.colors.primary.purple,
+                                            color: theme.theme.colors.primary.white,
+                                        }}
+                                    >
+                                        {index + 1}
+                                    </div>
+
+                                    {/* Photo Preview */}
+                                    <img
+                                        src={photo.imageUrl}
+                                        alt={photo.title}
+                                        className="w-16 h-12 object-cover rounded"
+                                    />
+
+                                    {/* Photo Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <p
+                                            className="font-medium truncate"
+                                            style={{
+                                                color: isDark
+                                                    ? theme.theme.colors.primary.white
+                                                    : theme.theme.colors.primary.black,
+                                            }}
+                                        >
+                                            {photo.title}
+                                        </p>
+                                    </div>
+
+                                    {/* Remove Button */}
+                                    <button
+                                        onClick={() => removePhoto(photo.id)}
+                                        className="p-1 rounded transition-colors hover:bg-red-100"
+                                        style={{
+                                            color: theme.theme.colors.accent.pink,
+                                        }}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
 
                         {/* Add More Photos */}
                         <button
