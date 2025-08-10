@@ -3,6 +3,7 @@ import { Outfit, Gloock } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../../frontend-theme-system/components/ThemeProvider";
 import MainLayout from "../components/layout/MainLayout";
+import { Toaster } from "react-hot-toast";
 
 const outfitFont = Outfit({
     variable: "--font-outfit",
@@ -91,6 +92,30 @@ export default function RootLayout({
             >
                 <ThemeProvider defaultDark={false} storageKey="epiksode-theme">
                     <MainLayout>{children}</MainLayout>
+                    <Toaster
+                        position="top-center"
+                        toastOptions={{
+                            duration: 4000,
+                            style: {
+                                background: '#363636',
+                                color: '#fff',
+                                borderRadius: '8px',
+                                padding: '16px',
+                            },
+                            success: {
+                                iconTheme: {
+                                    primary: '#10b981',
+                                    secondary: '#fff',
+                                },
+                            },
+                            error: {
+                                iconTheme: {
+                                    primary: '#ef4444',
+                                    secondary: '#fff',
+                                },
+                            },
+                        }}
+                    />
                 </ThemeProvider>
             </body>
         </html>
