@@ -6,9 +6,9 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient, ApiClientError, getErrorMessage } from '@/lib/api-client';
-import { PhotoDetail, PhotoListResponse } from '@/types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { apiClient, getErrorMessage } from '@/lib/api-client';
+import { PhotoDetail } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 // =============================================================================
@@ -58,7 +58,6 @@ type UsePhotosReturn = UsePhotosState & UsePhotosActions;
 
 export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
     const { 
-        limit = 10, 
         sortBy = 'latest', 
         autoLoad = true 
     } = options;
@@ -72,6 +71,9 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    
+    // 초기 로드 추적용 ref
+    const hasInitialLoadedRef = useRef(false);
 
     // =============================================================================
     // 🔧 내부 헬퍼 함수들
@@ -89,244 +91,52 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
         page: number = 1, 
         append: boolean = false
     ): Promise<PhotoDetail[]> => {
+        // 이미 로딩 중이면 중복 호출 방지
+        if (loading) {
+            console.log('🚫 이미 로딩 중이므로 중복 호출 방지');
+            return [];
+        }
+
         try {
+            setLoading(true);
             setError(null);
             
-            // 실제 API 호출
-            try {
-                console.log('🔍 API 호출 시작:', { sortBy });
-                const response = await apiClient.getPhotos({
-                    sortBy, // 백엔드가 지원하는 파라미터만 전송
-                    // page, limit은 백엔드에서 아직 구현되지 않음
+            // console.log('🔍 API 호출 시작:', { sortBy, page });
+            const response = await apiClient.getPhotos({
+                sortBy, // 백엔드가 지원하는 파라미터만 전송
+                // page, limit은 백엔드에서 아직 구현되지 않음
+            });
+            // console.log('✅ API 응답 성공:', response);
+
+            // API 클라이언트에서 이미 올바른 형식으로 반환됨
+            const newPhotos = response as PhotoDetail[];
+            const hasMorePhotos = false; // 백엔드에서 페이지네이션 미구현으로 false
+
+            // 상태 업데이트 (중복 제거)
+            if (append) {
+                setPhotos(prev => {
+                    // 기존 사진 ID들 추출
+                    const existingIds = new Set(prev.map(p => p.id));
+                    // 새로운 사진만 필터링
+                    const uniqueNewPhotos = newPhotos.filter(p => !existingIds.has(p.id));
+                    return [...prev, ...uniqueNewPhotos];
                 });
-                console.log('✅ API 응답 성공:', response);
-
-                // API 클라이언트에서 이미 올바른 형식으로 반환됨
-                const newPhotos = response as PhotoDetail[];
-                const hasMorePhotos = newPhotos.length >= limit; // 임시: 페이지네이션 미구현
-
-                // 상태 업데이트
-                if (append) {
-                    setPhotos(prev => [...prev, ...newPhotos]);
-                } else {
-                    setPhotos(newPhotos);
-                }
-
-                setHasMore(hasMorePhotos);
-                setCurrentPage(page);
-
-                return newPhotos;
-            } catch (apiError) {
-                // API 에러가 발생하면 목업 데이터로 폴백
-                console.error('❌ API 호출 실패:', apiError);
-                if (page === 1) {
-                    console.info('백엔드 API 연결 대기 중... 목업 데이터를 사용합니다.');
-                }
-                // API 에러가 발생하면 목업 데이터로 폴백
-                // 목업 데이터를 인라인으로 처리
-                const mockPhotos: PhotoDetail[] = [
-                    {
-                        id: 1,
-                        userId: 1,
-                        title: "산속의 아침",
-                        description: "지리산 국립공원의 수력 폭포에서 바라본 산속의 아름다운 아침 풍경입니다.",
-                        imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=1200&fit=crop",
-                        thumbnailUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",
-                        viewCount: 1247,
-                        isPublic: true,
-                        createdAt: "2024-02-15T06:30:00.000Z",
-                        updatedAt: "2024-02-15T06:30:00.000Z",
-                        deletedAt: null,
-                        author: {
-                            id: 1,
-                            username: "nature_kim",
-                            bio: "자연의 아름다움을 담는 사진가입니다.",
-                            profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-                            createdAt: "2024-01-15T09:30:00.000Z"
-                        },
-                        likesCount: 42,
-                        commentsCount: 8,
-                        isLikedByCurrentUser: false,
-                        isOwner: false
-                    },
-                    {
-                        id: 2,
-                        userId: 5,
-                        title: "사막의 별",
-                        description: "사하라 사막에서 바라본 은하수와 별들의 화려한 화상입니다.",
-                        imageUrl: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&h=1100&fit=crop",
-                        thumbnailUrl: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=300&h=300&fit=crop",
-                        viewCount: 2156,
-                        isPublic: true,
-                        createdAt: "2024-03-20T22:45:00.000Z",
-                        updatedAt: "2024-03-20T22:45:00.000Z",
-                        deletedAt: null,
-                        author: {
-                            id: 5,
-                            username: "star_jung",
-                            bio: "밤하늘의 아름다움을 찾아다니는 여행자입니다.",
-                            profileImageUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-                            createdAt: "2024-01-20T14:20:00.000Z"
-                        },
-                        likesCount: 89,
-                        commentsCount: 23,
-                        isLikedByCurrentUser: true,
-                        isOwner: false
-                    },
-                    {
-                        id: 3,
-                        userId: 2,
-                        title: "도시의 야경",
-                        description: "번화가 네온사인이 만들어내는 환상적인 밤의 풍경",
-                        imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=1000&fit=crop",
-                        thumbnailUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=300&fit=crop",
-                        viewCount: 892,
-                        isPublic: true,
-                        createdAt: "2024-08-08T22:15:00.000Z",
-                        updatedAt: "2024-08-08T22:15:00.000Z",
-                        deletedAt: null,
-                        author: {
-                            id: 2,
-                            username: "city_park",
-                            bio: "도시의 숨겨진 매력을 발견하고 기록하는 것을 좋아합니다.",
-                            profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-                            createdAt: "2024-02-01T00:00:00.000Z"
-                        },
-                        likesCount: 156,
-                        commentsCount: 41,
-                        isLikedByCurrentUser: false,
-                        isOwner: false
-                    }
-                ];
-
-                // 페이지네이션 시뮬레이션
-                const startIndex = (page - 1) * limit;
-                const endIndex = startIndex + limit;
-                const pagePhotos = mockPhotos.slice(startIndex, endIndex);
-
-                // 상태 업데이트
-                if (append) {
-                    setPhotos(prev => [...prev, ...pagePhotos]);
-                } else {
-                    setPhotos(pagePhotos);
-                }
-
-                setHasMore(page < 2); // 2페이지까지만 있다고 가정
-                setCurrentPage(page);
-
-                return pagePhotos;
+            } else {
+                setPhotos(newPhotos);
             }
+
+            setHasMore(hasMorePhotos);
+            setCurrentPage(page);
+
+            return newPhotos;
         } catch (error) {
             handleError(error);
             return [];
+        } finally {
+            setLoading(false);
         }
-    }, [limit, sortBy, handleError]);
+    }, [sortBy, handleError, loading]);
 
-    /** 목업 데이터 로드 (API 서버가 준비되지 않은 경우) */
-    const loadMockPhotos = useCallback((
-        page: number = 1, 
-        append: boolean = false
-    ): PhotoDetail[] => {
-        // docs/api/api_samples/photos/photo_list.json 기반 목업 데이터
-        const mockPhotos: PhotoDetail[] = [
-            {
-                id: 1,
-                userId: 1,
-                title: "산속의 아침",
-                description: "지리산 국립공원의 수력 폭포에서 바라본 산속의 아름다운 아침 풍경입니다.",
-                imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=1200&fit=crop",
-                thumbnailUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",
-                viewCount: 1247,
-                isPublic: true,
-                createdAt: "2024-02-15T06:30:00.000Z",
-                updatedAt: "2024-02-15T06:30:00.000Z",
-                deletedAt: null,
-                author: {
-                    id: 1,
-                    username: "nature_kim",
-                    bio: "자연의 아름다움을 담는 사진가입니다. 산과 숲, 강과 바다의 순간을 기록합니다.",
-                    profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-                    createdAt: "2024-01-15T09:30:00.000Z"
-                },
-                likesCount: 42,
-                commentsCount: 8,
-                isLikedByCurrentUser: false,
-                isOwner: false
-            },
-            {
-                id: 17,
-                userId: 5,
-                title: "사막의 별",
-                description: "사하라 사막에서 바라본 은하수와 별들의 화려한 화상입니다.",
-                imageUrl: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&h=1100&fit=crop",
-                thumbnailUrl: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=300&h=300&fit=crop",
-                viewCount: 2156,
-                isPublic: true,
-                createdAt: "2024-03-20T22:45:00.000Z",
-                updatedAt: "2024-03-20T22:45:00.000Z",
-                deletedAt: null,
-                author: {
-                    id: 5,
-                    username: "star_jung",
-                    bio: "밤하늘의 아름다움을 찾아다니는 여행자입니다. 달과 별, 그리고 우주를 사랑합니다.",
-                    profileImageUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-                    createdAt: "2024-01-20T14:20:00.000Z"
-                },
-                likesCount: 89,
-                commentsCount: 23,
-                isLikedByCurrentUser: true,
-                isOwner: false
-            },
-            {
-                id: 25,
-                userId: 2,
-                title: "도시의 야경",
-                description: "번화가 네온사인이 만들어내는 환상적인 밤의 풍경",
-                imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=1000&fit=crop",
-                thumbnailUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=300&fit=crop",
-                viewCount: 892,
-                isPublic: true,
-                createdAt: "2024-08-08T22:15:00.000Z",
-                updatedAt: "2024-08-08T22:15:00.000Z",
-                deletedAt: null,
-                author: {
-                    id: 2,
-                    username: "city_park",
-                    bio: "도시의 숨겨진 매력을 발견하고 기록하는 것을 좋아합니다. 🏙️✨",
-                    profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-                    createdAt: "2024-02-01T00:00:00.000Z"
-                },
-                likesCount: 156,
-                commentsCount: 41,
-                isLikedByCurrentUser: false,
-                isOwner: false
-            }
-        ];
-
-        // 페이지네이션 시뮬레이션
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const pagePhotos = mockPhotos.slice(startIndex, endIndex);
-
-        // 페이지별로 ID를 조정하여 중복 방지
-        const adjustedPhotos = pagePhotos.map((photo, index) => ({
-            ...photo,
-            id: photo.id + (page - 1) * limit,
-        }));
-
-        // 상태 업데이트
-        if (append) {
-            setPhotos(prev => [...prev, ...adjustedPhotos]);
-        } else {
-            setPhotos(adjustedPhotos);
-        }
-
-        // 3페이지까지만 데이터가 있다고 가정
-        setHasMore(page < 3);
-        setCurrentPage(page);
-
-        return adjustedPhotos;
-    }, [limit]);
 
     // =============================================================================
     // 📤 공개 액션들
@@ -418,13 +228,16 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
 
     /** 초기 사진 로드 */
     useEffect(() => {
-        if (autoLoad && photos.length === 0 && !initialLoading) {
+        if (autoLoad && !hasInitialLoadedRef.current && !initialLoading) {
+            hasInitialLoadedRef.current = true;
+            
             const loadInitialPhotos = async () => {
                 try {
                     setInitialLoading(true);
                     await loadPhotos(1, false);
                 } catch (error) {
                     console.error('초기 사진 로드 실패:', error);
+                    hasInitialLoadedRef.current = false; // 실패 시 다시 시도 가능하게
                 } finally {
                     setInitialLoading(false);
                 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import {
     X,
@@ -38,7 +39,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     hasNext = false,
     hasPrevious = false,
     onLike,
-    onFollow,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onFollow: _onFollow,
 }) => {
     const { theme, isDark } = useThemeContext();
     const [activeTab, setActiveTab] = useState<'comments' | 'info'>('comments');
@@ -46,7 +48,6 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
     const [comments, setComments] = useState<CommentDetail[]>([
     ]);
-    const [isImageLoading, setIsImageLoading] = useState(true);
 
     // 키보드 네비게이션
     useEffect(() => {
@@ -101,19 +102,28 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
 
         if (replyingTo) {
             // 답글 추가
-            const reply: Comment = {
-                id: `reply-${replyingTo}-${comments.length}-${Math.random().toString(36).substring(7)}`,
-                user: {
-                    name: "현재 사용자",
-                    username: "current_user",
-                    avatar: "",
-                },
+            const reply: CommentDetail = {
+                id: Math.floor(Math.random() * 10000),
+                userId: 1,
                 content: newComment,
-                createdAt: new Date().toISOString(),
-                likes: 0,
-                isLiked: false,
-                isReply: true,
+                photoId: photo.id,
+                seriesId: null,
                 parentId: replyingTo,
+                deletedAt: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                author: {
+                    id: 1,
+                    username: "current_user",
+                    bio: null,
+                    profileImageUrl: null,
+                    createdAt: new Date().toISOString(),
+                },
+                likesCount: 0,
+                repliesCount: 0,
+                replies: [],
+                isLikedByCurrentUser: false,
+                isOwner: true,
             };
 
             setComments(prev =>
@@ -129,25 +139,35 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             setReplyingTo(null);
         } else {
             // 새 댓글 추가
-            const comment: Comment = {
-                id: `comment-${comments.length}-${Math.random().toString(36).substring(7)}`,
-                user: {
-                    name: "현재 사용자",
-                    username: "current_user",
-                    avatar: "",
-                },
+            const comment: CommentDetail = {
+                id: Math.floor(Math.random() * 10000),
+                userId: 1,
                 content: newComment,
+                photoId: photo.id,
+                seriesId: null,
+                parentId: null,
+                deletedAt: null,
                 createdAt: new Date().toISOString(),
-                likes: 0,
-                isLiked: false,
+                updatedAt: new Date().toISOString(),
+                author: {
+                    id: 1,
+                    username: "current_user",
+                    bio: null,
+                    profileImageUrl: null,
+                    createdAt: new Date().toISOString(),
+                },
+                likesCount: 0,
+                repliesCount: 0,
                 replies: [],
+                isLikedByCurrentUser: false,
+                isOwner: true,
             };
 
             setComments(prev => [comment, ...prev]);
         }
         
         setNewComment("");
-    }, [newComment, replyingTo]);
+    }, [newComment, replyingTo, photo.id]);
 
     // 댓글 좋아요 핸들러
     const handleCommentLike = useCallback((commentId: number, isReply: boolean = false, parentId?: number) => {
@@ -257,26 +277,21 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             <div className="w-full h-full max-w-7xl mx-auto grid lg:grid-cols-3 gap-0">
                 {/* Image Section */}
                 <div className="lg:col-span-2 relative flex items-center justify-center bg-black">
-                    {isImageLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div
-                                className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
-                                style={{
-                                    borderColor: theme.theme.colors.primary.white,
-                                    borderTopColor: "transparent",
-                                }}
-                            />
-                        </div>
-                    )}
-                    
+                    {/* 일반 img 태그 사용으로 Next.js Image 문제 회피 */}
                     <img
                         src={photo.imageUrl}
                         alt={photo.title}
-                        className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
-                            isImageLoading ? 'opacity-0' : 'opacity-100'
-                        }`}
-                        onLoad={() => setIsImageLoading(false)}
-                        onError={() => setIsImageLoading(false)}
+                        className="max-w-full max-h-full object-contain"
+                        onError={(e) => {
+                            // 이미지 로딩 실패시 기본 이미지로 대체 (무한 루프 방지)
+                            const target = e.currentTarget;
+                            if (target.src !== '/images/placeholder.jpg') {
+                                target.src = '/images/placeholder.jpg';
+                            } else {
+                                // placeholder도 실패하면 빈 투명 이미지 사용
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPu2MjOyCqOy5hOuTnOqwgCDsl4bsnYk8L3RleHQ+PC9zdmc+';
+                            }
+                        }}
                     />
 
 
@@ -329,9 +344,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                                 {photo.author.profileImageUrl ? (
-                                    <img
+                                    <Image
                                         src={photo.author.profileImageUrl}
                                         alt={photo.author.username}
+                                        width={48}
+                                        height={48}
                                         className="w-12 h-12 rounded-full object-cover"
                                     />
                                 ) : (
@@ -457,7 +474,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 }}
                             >
                                 <Eye size={14} />
-0
+                                {photo.viewCount}
                             </span>
                         </div>
 
@@ -521,9 +538,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                             {/* Main Comment */}
                                             <div className="flex items-start gap-3">
                                                 {comment.author.profileImageUrl ? (
-                                                    <img
+                                                    <Image
                                                         src={comment.author.profileImageUrl}
                                                         alt={comment.author.username}
+                                                        width={32}
+                                                        height={32}
                                                         className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                                                     />
                                                 ) : (
@@ -612,9 +631,11 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                     {comment.replies.map((reply) => (
                                                         <div key={reply.id} className="flex items-start gap-3">
                                                             {reply.author.profileImageUrl ? (
-                                                                <img
+                                                                <Image
                                                                     src={reply.author.profileImageUrl}
                                                                     alt={reply.author.username}
+                                                                    width={24}
+                                                                    height={24}
                                                                     className="w-6 h-6 rounded-full object-cover flex-shrink-0"
                                                                 />
                                                             ) : (

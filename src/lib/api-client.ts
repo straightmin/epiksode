@@ -6,8 +6,6 @@
  */
 
 import { 
-    ApiResponse, 
-    ApiError,
     LoginRequest, 
     LoginResponse, 
     RegisterRequest,
@@ -21,9 +19,7 @@ import {
     CreateCommentRequest,
     CommentDetail,
     User,
-    UpdateProfileRequest,
-    UserProfile,
-    PaginatedResponse
+    UpdateProfileRequest
 } from '@/types';
 
 // =============================================================================
@@ -61,7 +57,7 @@ export class ApiClientError extends Error {
         public code: string,
         public statusCode: number,
         message: string,
-        public details?: Record<string, any>
+        public details?: Record<string, unknown>
     ) {
         super(message);
         this.name = 'ApiClientError';
@@ -221,9 +217,9 @@ export class ApiClient {
                 lastError = error as Error;
                 console.error(`❌ Fetch 에러 (시도 ${attempt + 1}):`, {
                     error: error,
-                    message: error.message,
-                    name: error.name,
-                    stack: error.stack
+                    message: error instanceof Error ? error.message : String(error),
+                    name: error instanceof Error ? error.name : 'Unknown',
+                    stack: error instanceof Error ? error.stack : undefined
                 });
                 
                 // 마지막 시도가 아니면 재시도
@@ -242,7 +238,7 @@ export class ApiClient {
 
     /** 응답 처리 */
     private async handleResponse<T>(response: Response): Promise<T> {
-        let responseData: any;
+        let responseData: unknown;
 
         try {
             responseData = await response.json();
@@ -262,7 +258,8 @@ export class ApiClient {
             if (responseData && typeof responseData === 'object' && 'success' in responseData) {
                 console.log('📦 래퍼 형식 응답 감지:', responseData);
                 if (responseData.success) {
-                    return responseData.data as T;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    return (responseData as any).data as T;
                 }
                 // success: false인 경우는 에러로 처리 (아래로)
             } else {
@@ -275,9 +272,11 @@ export class ApiClient {
         // 에러 응답 처리
         console.error('❌ API 에러 응답:', { status: response.status, data: responseData });
         
-        const apiError = responseData?.error || {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const apiError = (responseData as any)?.error || {
             code: 'UNKNOWN_ERROR',
-            message: responseData?.message || '알 수 없는 오류가 발생했습니다.',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            message: (responseData as any)?.message || '알 수 없는 오류가 발생했습니다.',
         };
 
         // 인증 에러 시 토큰 클리어
@@ -288,7 +287,8 @@ export class ApiClient {
         throw new ApiClientError(
             apiError.code,
             response.status,
-            responseData?.message || apiError.message,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (responseData as any)?.message || apiError.message,
             apiError.details
         );
     }
@@ -312,8 +312,17 @@ export class ApiClient {
     }
 
     /** GET 요청 */
-    private async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-        const searchParams = params ? new URLSearchParams(params).toString() : '';
+    private async get<T>(endpoint: string, params?: Record<string, unknown>): Promise<T> {
+        let searchParams = '';
+        if (params) {
+            const urlParams = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                    urlParams.append(key, String(value));
+                }
+            });
+            searchParams = urlParams.toString();
+        }
         const url = searchParams ? `${endpoint}?${searchParams}` : endpoint;
         
         return this.request<T>(url, {
@@ -324,7 +333,7 @@ export class ApiClient {
     /** POST 요청 */
     private async post<T>(
         endpoint: string, 
-        data?: any,
+        data?: unknown,
         isFormData = false
     ): Promise<T> {
         const options: RequestInit = {
@@ -333,7 +342,7 @@ export class ApiClient {
 
         if (data) {
             if (isFormData) {
-                options.body = data; // FormData는 그대로 전송
+                options.body = data as BodyInit; // FormData는 그대로 전송
                 // FormData는 Content-Type을 자동 설정하므로 헤더에서 제거
                 options.headers = {};
             } else {
@@ -345,7 +354,7 @@ export class ApiClient {
     }
 
     /** PUT 요청 */
-    private async put<T>(endpoint: string, data?: any): Promise<T> {
+    private async put<T>(endpoint: string, data?: unknown): Promise<T> {
         return this.request<T>(endpoint, {
             method: 'PUT',
             body: data ? JSON.stringify(data) : undefined,
@@ -360,7 +369,7 @@ export class ApiClient {
     }
 
     /** PATCH 요청 */
-    private async patch<T>(endpoint: string, data?: any): Promise<T> {
+    private async patch<T>(endpoint: string, data?: unknown): Promise<T> {
         return this.request<T>(endpoint, {
             method: 'PATCH',
             body: data ? JSON.stringify(data) : undefined,
@@ -416,7 +425,55 @@ export class ApiClient {
         sortBy?: 'latest' | 'popular';
         // page, limit은 백엔드에서 아직 구현되지 않음
     }): Promise<PhotoDetail[] | PhotoListResponse> {
-        return this.get<PhotoDetail[] | PhotoListResponse>('/photos', params);
+        const response = await this.get<unknown[]>('/photos', params);
+        
+        // S3 URL을 프록시 URL로 변환하는 함수
+        const convertToProxyUrl = (url: string, photoId: number, isThumbnail: boolean = false) => {
+            // 이미 프록시 URL인 경우 그대로 반환
+            if (url.includes('/api/images/')) {
+                return url;
+            }
+            
+            // S3 URL인 경우 프록시 URL로 변환
+            if (url.includes('.s3.') || url.includes('amazonaws.com')) {
+                const baseUrl = this.config.baseUrl.replace('/api', ''); // http://localhost:3001
+                return isThumbnail 
+                    ? `${baseUrl}/api/images/thumbnails/${photoId}`
+                    : `${baseUrl}/api/images/${photoId}`;
+            }
+            
+            // 기타 URL은 그대로 반환
+            return url;
+        };
+
+        // 백엔드 응답을 프론트엔드 타입에 맞게 매핑
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappedPhotos: PhotoDetail[] = response.map((photo: any) => ({
+            ...photo,
+            // 이미지 URL을 프록시 URL로 변환
+            imageUrl: convertToProxyUrl(photo.imageUrl, photo.id, false),
+            thumbnailUrl: convertToProxyUrl(photo.thumbnailUrl, photo.id, true),
+            // author 필드 매핑 (백엔드에서 부족한 필드들 기본값 설정)
+            author: {
+                id: photo.author?.id,
+                username: photo.author?.username,
+                bio: photo.author?.bio || null,
+                profileImageUrl: photo.author?.profileImageUrl || null,
+                createdAt: photo.author?.createdAt || photo.createdAt,
+            },
+            // commentsCount 기본값 설정 (백엔드에서 미제공시)
+            commentsCount: photo.commentsCount || photo._count?.comments || 0,
+            // 현재 사용자 관련 필드 기본값
+            isLikedByCurrentUser: photo.isLikedByCurrentUser || false,
+            isOwner: photo.isOwner || false,
+        }));
+        
+        // console.log('📋 매핑된 사진 URL 확인:', mappedPhotos.slice(0, 3).map(p => ({ 
+        //     id: p.id, 
+        //     imageUrl: p.imageUrl, 
+        //     thumbnailUrl: p.thumbnailUrl 
+        // })));
+        return mappedPhotos;
     }
 
     /** 사진 상세 조회 */
@@ -491,6 +548,67 @@ export class ApiClient {
     /** 댓글 삭제 */
     async deleteComment(commentId: number): Promise<void> {
         return this.delete<void>(`/comments/${commentId}`);
+    }
+
+    // =============================================================================
+    // 🖼️ 이미지 프록시 API
+    // =============================================================================
+
+    /** 이미지 프록시 URL 생성 */
+    getImageUrl(photoId: number, thumbnail = false): string {
+        const endpoint = thumbnail ? 'thumbnails' : '';
+        return `${this.config.baseUrl}/images/${endpoint ? endpoint + '/' : ''}${photoId}`;
+    }
+
+    /** 썸네일 이미지 URL 생성 */
+    getThumbnailUrl(photoId: number): string {
+        return this.getImageUrl(photoId, true);
+    }
+
+    /** 이미지 메타데이터 조회 (HEAD 요청) */
+    async getImageMetadata(photoId: number, thumbnail = false): Promise<{
+        contentType?: string;
+        contentLength?: number;
+        lastModified?: string;
+        etag?: string;
+    }> {
+        const endpoint = thumbnail ? 'thumbnails' : '';
+        const url = `/images/${endpoint ? endpoint + '/' : ''}${photoId}`;
+        
+        try {
+            const response = await fetch(`${this.config.baseUrl}${url}`, {
+                method: 'HEAD',
+                headers: {
+                    'Authorization': this.tokenManager.getToken() ? `Bearer ${this.tokenManager.getToken()}` : '',
+                }
+            });
+
+            if (!response.ok) {
+                throw new ApiClientError('IMAGE_METADATA_ERROR', response.status, '이미지 메타데이터를 가져올 수 없습니다.');
+            }
+
+            return {
+                contentType: response.headers.get('content-type') || undefined,
+                contentLength: response.headers.get('content-length') ? parseInt(response.headers.get('content-length')!) : undefined,
+                lastModified: response.headers.get('last-modified') || undefined,
+                etag: response.headers.get('etag') || undefined,
+            };
+        } catch (error) {
+            if (error instanceof ApiClientError) {
+                throw error;
+            }
+            throw new ApiClientError('NETWORK_ERROR', 0, '이미지 메타데이터 조회 중 네트워크 오류가 발생했습니다.');
+        }
+    }
+
+    /** 이미지 존재 여부 확인 */
+    async checkImageExists(photoId: number, thumbnail = false): Promise<boolean> {
+        try {
+            await this.getImageMetadata(photoId, thumbnail);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     // =============================================================================

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Heart, MessageCircle } from "lucide-react";
 import { PhotoDetail } from "@/types";
@@ -18,7 +18,6 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
 }) => {
     const { theme, isDark } = useThemeContext();
     const [isHovered, setIsHovered] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false);
 
     const handleLike = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -48,36 +47,26 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
             }}
         >
             {/* Image Container */}
-            <div className="relative overflow-hidden">
-                {/* Loading placeholder */}
-                {!imageLoaded && (
-                    <div
-                        className="w-full aspect-[3/4] flex items-center justify-center animate-pulse"
-                        style={{
-                            backgroundColor: theme.theme.colors.primary.purpleVeryLight,
-                        }}
-                    >
-                        <div
-                            className="text-sm font-medium"
-                            style={{ color: theme.theme.colors.primary.purple }}
-                        >
-                            로딩 중...
-                        </div>
-                    </div>
-                )}
-
-                {/* Main Image */}
+            <div className="relative overflow-hidden aspect-[4/5]">
+                {/* 일반 img 태그 사용으로 Next.js Image 문제 회피 */}
                 <img
-                    src={photo.imageUrl}
+                    src={photo.thumbnailUrl || photo.imageUrl}
                     alt={photo.title}
-                    className={`w-full h-auto object-cover transition-all duration-300 ${
-                        imageLoaded ? "opacity-100" : "opacity-0"
-                    } ${isHovered ? "scale-105" : "scale-100"}`}
-                    onLoad={() => setImageLoaded(true)}
-                    onError={() => setImageLoaded(true)}
-                    style={{
-                        minHeight: "200px",
-                        maxHeight: "400px",
+                    className={useMemo(() => 
+                        `w-full h-full object-cover transition-all duration-300 ${
+                            isHovered ? "scale-105" : "scale-100"
+                        }`, [isHovered]
+                    )}
+                    loading="lazy"
+                    onError={(e) => {
+                        // 이미지 로딩 실패시 기본 이미지로 대체 (무한 루프 방지)
+                        const target = e.currentTarget;
+                        if (target.src !== '/images/placeholder.jpg') {
+                            target.src = '/images/placeholder.jpg';
+                        } else {
+                            // placeholder도 실패하면 빈 투명 이미지 사용
+                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPu2MjOyCqOy5hOuTnOqwgCDsl4bsnYk8L3RleHQ+PC9zdmc+';
+                        }
                     }}
                 />
 
