@@ -286,15 +286,8 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                         objectFit="contain"
                         priority
                         showPlaceholder
-                        onError={(e) => {
-                            // 이미지 로딩 실패시 기본 이미지로 대체 (무한 루프 방지)
-                            const target = e.currentTarget;
-                            if (target.src !== '/images/placeholder.jpg') {
-                                target.src = '/images/placeholder.jpg';
-                            } else {
-                                // placeholder도 실패하면 빈 투명 이미지 사용
-                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPu2MjOyCqOy5hOuTnOqwgCDsl4bsnYk8L3RleHQ+PC9zdmc+';
-                            }
+                        onError={(error: Error) => {
+                            console.error('PhotoModal: 이미지 로딩 실패', error);
                         }}
                     />
 

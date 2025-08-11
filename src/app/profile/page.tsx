@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Camera, Calendar, Heart, Bookmark, UserPlus, UserMinus, Settings } from "lucide-react";
@@ -9,7 +9,7 @@ import { PhotoDetail, User } from '@/types';
 import { apiClient, getErrorMessage } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function ProfilePage() {
+function ProfileContent() {
     const { theme, isDark } = useThemeContext();
     const { isAuthenticated, user: currentUser } = useAuth();
     const searchParams = useSearchParams();
@@ -436,5 +436,28 @@ export default function ProfilePage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ProfilePage() {
+    const { theme, isDark } = useThemeContext();
+    
+    return (
+        <Suspense fallback={
+            <div 
+                className="min-h-screen flex items-center justify-center"
+                style={{
+                    backgroundColor: isDark
+                        ? theme.theme.colors.background.dark
+                        : theme.theme.colors.background.main,
+                }}
+            >
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2"
+                    style={{ borderColor: theme.theme.colors.primary.purple }}
+                ></div>
+            </div>
+        }>
+            <ProfileContent />
+        </Suspense>
     );
 }
