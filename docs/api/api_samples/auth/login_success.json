@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "message": "로그인되었습니다.",
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "nature.photographer@example.com",
+      "username": "nature_kim",
+      "bio": "자연의 아름다움을 담는 사진가입니다. 산과 숲, 강과 바다의 순간을 기록합니다.",
+      "profileImageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      "notifyLikes": true,
+      "notifyComments": true,
+      "notifyFollows": true,
+      "notifySeries": true,
+      "createdAt": "2024-01-15T09:30:00.000Z",
+      "updatedAt": "2025-08-10T04:15:30.000Z",
+      "deletedAt": null
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoibmF0dXJlLnBob3RvZ3JhcGhlckBleGFtcGxlLmNvbSIsImlhdCI6MTcyMzI4NDAwMCwiZXhwIjoxNzIzODg4ODAwfQ.signature_placeholder",
+    "expiresIn": 604800
+  }
+}
