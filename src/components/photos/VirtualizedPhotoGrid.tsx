@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoCard from "./PhotoCard";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { PhotoDetail } from "@/types";
 
 interface VirtualizedPhotoGridProps {
@@ -17,7 +18,7 @@ interface VirtualizedPhotoGridProps {
     overscan?: number;
 }
 
-const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
+const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = memo(({
     photos,
     onLike,
     onPhotoClick,
@@ -152,11 +153,38 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
                         style={{ minHeight: itemHeight }}
                         className="transition-transform duration-300 hover:scale-[1.02]"
                     >
-                        <PhotoCard
-                            photo={photo}
-                            onLike={onLike}
-                            onClick={onPhotoClick}
-                        />
+                        <ErrorBoundary
+                            resetKeys={[photo.id]}
+                            onError={(error) => {
+                                console.warn(`VirtualizedPhotoCard 에러 (ID: ${photo.id}):`, error);
+                            }}
+                            fallback={
+                                <div
+                                    className="flex items-center justify-center rounded-lg"
+                                    style={{
+                                        backgroundColor: theme.theme.colors.primary.purpleVeryLight,
+                                        minHeight: itemHeight,
+                                    }}
+                                >
+                                    <p
+                                        className="text-sm text-center"
+                                        style={{
+                                            color: isDark
+                                                ? theme.theme.colors.primary.gray
+                                                : theme.theme.colors.primary.darkGray,
+                                        }}
+                                    >
+                                        사진을 불러올 수 없습니다
+                                    </p>
+                                </div>
+                            }
+                        >
+                            <PhotoCard
+                                photo={photo}
+                                onLike={onLike}
+                                onClick={onPhotoClick}
+                            />
+                        </ErrorBoundary>
                     </div>
                 ))}
                 
@@ -168,7 +196,7 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
                 )}
             </div>
         );
-    }, [virtualizedData, itemHeight, onLike, onPhotoClick]);
+    }, [virtualizedData, itemHeight, onLike, onPhotoClick, theme.theme.colors.primary.purpleVeryLight, theme.theme.colors.primary.gray, theme.theme.colors.primary.darkGray, isDark]);
 
     // 스켈레톤 높이 패턴 (일관성 있는 로딩 경험 제공)
     const SKELETON_HEIGHTS = useMemo(() => [
@@ -200,8 +228,13 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
     }, [loading, columnCount, theme.theme.colors.primary.purpleVeryLight, SKELETON_HEIGHTS]);
 
     return (
-        <div className="w-full h-full">
-            {/* Photo Grid Container */}
+        <ErrorBoundary
+            onError={(error) => {
+                console.error('VirtualizedPhotoGrid 에러:', error);
+            }}
+        >
+            <div className="w-full h-full">
+                {/* Photo Grid Container */}
             <div
                 ref={containerRef}
                 className="h-full overflow-y-auto"
@@ -320,8 +353,11 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
                     </p>
                 </div>
             )}
-        </div>
+            </div>
+        </ErrorBoundary>
     );
-};
+});
+
+VirtualizedPhotoGrid.displayName = 'VirtualizedPhotoGrid';
 
 export default VirtualizedPhotoGrid;

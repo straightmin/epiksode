@@ -122,17 +122,17 @@ const PhotoImage: React.FC<PhotoImageProps> = ({
         return progressiveLoading && photoId ? getImageUrl(photoId, true) : undefined;
     }, [progressiveLoading, photoId]);
     
-    const srcSet = useMemo(() => {
-        if (!responsive) return undefined;
-        // src prop이 있으면 해당 URL을 썸네일로, photoId 기반 URL을 원본으로 사용
+    // 반응형 이미지 설정 (필요시에만 계산)
+    const responsiveConfig = useMemo(() => {
+        if (!responsive) return null;
+        
         const thumbnailUrl = src;
         const originalUrl = photoId ? getImageUrl(photoId, false) : src;
-        return getResponsiveSrcSet(thumbnailUrl, originalUrl);
-    }, [responsive, src, photoId]);
-    
-    const imageSizes = useMemo(() => {
-        return sizes || getDefaultSizes();
-    }, [sizes]);
+        const srcSet = getResponsiveSrcSet(thumbnailUrl, originalUrl);
+        const imageSizes = sizes || getDefaultSizes();
+        
+        return { srcSet, imageSizes };
+    }, [responsive, src, photoId, sizes]);
     
     // 플레이스홀더 URL (메모화)
     const placeholderSrc = useMemo(() => {
@@ -326,7 +326,7 @@ const PhotoImage: React.FC<PhotoImageProps> = ({
                 width={width}
                 height={height}
                 fill={fill}
-                sizes={fill ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" : undefined}
+                sizes={responsiveConfig?.imageSizes || (fill ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" : undefined)}
                 className={imageClasses}
                 style={{ objectFit }}
                 loading={lazy && !priority ? 'lazy' : 'eager'}
@@ -335,6 +335,7 @@ const PhotoImage: React.FC<PhotoImageProps> = ({
                 onError={handleError}
                 placeholder="blur"
                 blurDataURL={placeholderSrc}
+                {...(responsiveConfig?.srcSet && { srcSet: responsiveConfig.srcSet })}
             />
         </div>
     );

@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, memo, useCallback } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Heart, MessageCircle } from "lucide-react";
 import { PhotoDetail } from "@/types";
+import PhotoImage from "../images/PhotoImage";
+import Image from "next/image";
 
 interface PhotoCardProps {
     photo: PhotoDetail;
@@ -11,7 +13,7 @@ interface PhotoCardProps {
     onClick?: (photoId: number) => void;
 }
 
-const PhotoCard: React.FC<PhotoCardProps> = ({
+const PhotoCard: React.FC<PhotoCardProps> = memo(({
     photo,
     onLike,
     onClick,
@@ -19,21 +21,23 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
     const { theme, isDark } = useThemeContext();
     const [isHovered, setIsHovered] = useState(false);
 
-    const handleLike = (e: React.MouseEvent) => {
+    const handleLike = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         onLike?.(photo.id);
-    };
+    }, [onLike, photo.id]);
 
-
-    const handleClick = () => {
+    const handleClick = useCallback(() => {
         onClick?.(photo.id);
-    };
+    }, [onClick, photo.id]);
+
+    const handleMouseEnter = useCallback(() => setIsHovered(true), []);
+    const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
     return (
         <div
             className="relative group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] mb-4"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             onClick={handleClick}
             style={{
                 backgroundColor: isDark
@@ -49,25 +53,19 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
             {/* Image Container */}
             <div className="relative overflow-hidden aspect-[4/5]">
                 {/* 일반 img 태그 사용으로 Next.js Image 문제 회피 */}
-                <img
+                <PhotoImage
+                    photoId={photo.id}
                     src={photo.thumbnailUrl || photo.imageUrl}
                     alt={photo.title}
+                    fill
+                    objectFit="cover"
                     className={useMemo(() => 
-                        `w-full h-full object-cover transition-all duration-300 ${
+                        `transition-all duration-300 ${
                             isHovered ? "scale-105" : "scale-100"
                         }`, [isHovered]
                     )}
-                    loading="lazy"
-                    onError={(e) => {
-                        // 이미지 로딩 실패시 기본 이미지로 대체 (무한 루프 방지)
-                        const target = e.currentTarget;
-                        if (target.src !== '/images/placeholder.jpg') {
-                            target.src = '/images/placeholder.jpg';
-                        } else {
-                            // placeholder도 실패하면 빈 투명 이미지 사용
-                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPu2MjOyCqOy5hOuTnOqwgCDsl4bsnYk8L3RleHQ+PC9zdmc+';
-                        }
-                    }}
+                    lazy
+                    showPlaceholder
                 />
 
 
@@ -113,9 +111,11 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 {photo.author?.profileImageUrl ? (
-                                    <img
+                                    <Image
                                         src={photo.author.profileImageUrl}
                                         alt={photo.author.username}
+                                        width={24}
+                                        height={24}
                                         className="w-6 h-6 rounded-full object-cover"
                                     />
                                 ) : (
@@ -190,6 +190,8 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
             </div>
         </div>
     );
-};
+});
+
+PhotoCard.displayName = 'PhotoCard';
 
 export default PhotoCard;

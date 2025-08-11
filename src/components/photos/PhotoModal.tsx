@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Image from "next/image";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
+import PhotoImage from "../images/PhotoImage";
+import Image from "next/image";
 import {
     X,
     Heart,
@@ -30,7 +31,7 @@ interface PhotoModalProps {
     onFollow?: (userId: number) => void;
 }
 
-const PhotoModal: React.FC<PhotoModalProps> = ({
+const PhotoModal: React.FC<PhotoModalProps> = memo(({
     photo,
     isOpen,
     onClose,
@@ -277,11 +278,14 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             <div className="w-full h-full max-w-7xl mx-auto grid lg:grid-cols-3 gap-0">
                 {/* Image Section */}
                 <div className="lg:col-span-2 relative flex items-center justify-center bg-black">
-                    {/* 일반 img 태그 사용으로 Next.js Image 문제 회피 */}
-                    <img
+                    <PhotoImage
+                        photoId={photo.id}
                         src={photo.imageUrl}
                         alt={photo.title}
-                        className="max-w-full max-h-full object-contain"
+                        fill
+                        objectFit="contain"
+                        priority
+                        showPlaceholder
                         onError={(e) => {
                             // 이미지 로딩 실패시 기본 이미지로 대체 (무한 루프 방지)
                             const target = e.currentTarget;
@@ -808,6 +812,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             </div>
         </div>
     );
-};
+});
+
+PhotoModal.displayName = 'PhotoModal';
 
 export default PhotoModal;

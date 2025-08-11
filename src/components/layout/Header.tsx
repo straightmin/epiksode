@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, memo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
@@ -14,7 +14,7 @@ interface SearchSuggestion {
     image?: string;
 }
 
-const Header: React.FC = () => {
+const Header: React.FC = memo(() => {
     const { theme, isDark } = useThemeContext();
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
@@ -339,6 +339,8 @@ const Header: React.FC = () => {
             </div>
         </header>
     );
-};
+});
+
+Header.displayName = 'Header';
 
 export default Header;

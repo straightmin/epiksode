@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoCard from "./PhotoCard";
+import ErrorBoundary from "../common/ErrorBoundary";
 import { PhotoDetail } from "@/types";
 
 interface PhotoGridProps {
@@ -15,7 +16,7 @@ interface PhotoGridProps {
     columns?: number;
 }
 
-const PhotoGrid: React.FC<PhotoGridProps> = ({
+const PhotoGrid: React.FC<PhotoGridProps> = memo(({
     photos,
     onLike,
     onPhotoClick,
@@ -126,31 +127,63 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
     };
 
     return (
-        <div className="w-full">
-            {/* Photo Grid Container */}
-            <div
-                ref={containerRef}
-                className="grid gap-4 p-4"
-                style={{
-                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
-                }}
-            >
-                {photoColumns.map((columnPhotos, columnIndex) => (
-                    <div key={columnIndex} className="flex flex-col">
-                        {columnPhotos.map((photo) => (
-                            <PhotoCard
-                                key={photo.id}
-                                photo={photo}
-                                onLike={onLike}
-                                onClick={onPhotoClick}
-                            />
-                        ))}
-                        
-                        {/* 로딩 중일 때 각 컬럼에 스켈레톤 카드 추가 */}
-                        {loading && generateLoadingCards(2)}
-                    </div>
-                ))}
-            </div>
+        <ErrorBoundary
+            onError={(error) => {
+                console.error('PhotoGrid 에러:', error);
+            }}
+        >
+            <div className="w-full">
+                {/* Photo Grid Container */}
+                <div
+                    ref={containerRef}
+                    className="grid gap-4 p-4"
+                    style={{
+                        gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                    }}
+                >
+                    {photoColumns.map((columnPhotos, columnIndex) => (
+                        <div key={columnIndex} className="flex flex-col">
+                            {columnPhotos.map((photo) => (
+                                <ErrorBoundary
+                                    key={photo.id}
+                                    resetKeys={[photo.id]}
+                                    onError={(error) => {
+                                        console.warn(`PhotoCard 에러 (ID: ${photo.id}):`, error);
+                                    }}
+                                    fallback={
+                                        <div
+                                            className="flex items-center justify-center p-4 mb-4 rounded-lg"
+                                            style={{
+                                                backgroundColor: theme.theme.colors.primary.purpleVeryLight,
+                                                minHeight: '200px'
+                                            }}
+                                        >
+                                            <p
+                                                className="text-sm text-center"
+                                                style={{
+                                                    color: isDark
+                                                        ? theme.theme.colors.primary.gray
+                                                        : theme.theme.colors.primary.darkGray,
+                                                }}
+                                            >
+                                                사진을 불러올 수 없습니다
+                                            </p>
+                                        </div>
+                                    }
+                                >
+                                    <PhotoCard
+                                        photo={photo}
+                                        onLike={onLike}
+                                        onClick={onPhotoClick}
+                                    />
+                                </ErrorBoundary>
+                            ))}
+                            
+                            {/* 로딩 중일 때 각 컬럼에 스켈레톤 카드 추가 */}
+                            {loading && generateLoadingCards(2)}
+                        </div>
+                    ))}
+                </div>
 
             {/* 무한 스크롤 트리거 */}
             {hasMore && <div ref={observerRef} className="h-4" />}
@@ -213,8 +246,11 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                     </p>
                 </div>
             )}
-        </div>
+            </div>
+        </ErrorBoundary>
     );
-};
+});
+
+PhotoGrid.displayName = 'PhotoGrid';
 
 export default PhotoGrid;

@@ -8,6 +8,33 @@
  */
 
 // =============================================================================
+// 🛠️ 유틸리티 타입
+// =============================================================================
+
+/** ID 타입 정의 (타입 안전성 강화) */
+export type ID = number;
+
+/** 선택적 필드를 가진 타입 생성 */
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+/** 필수 필드를 가진 타입 생성 */
+export type Required<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
+/** 깊은 부분 타입 */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+/** API 상태 */
+export type ApiStatus = 'idle' | 'loading' | 'success' | 'error';
+
+/** 정렬 방향 */
+export type SortOrder = 'asc' | 'desc';
+
+/** 컨텐츠 정렬 기준 */
+export type SortBy = 'latest' | 'popular' | 'oldest';
+
+// =============================================================================
 // 🔧 공통 타입 정의
 // =============================================================================
 
@@ -54,7 +81,7 @@ export interface Timestamps {
 
 /** 기본 사용자 정보 (백엔드 User 엔티티) */
 export interface User extends Timestamps {
-  id: number; // ⚠️ 정수형 ID (기존 string에서 변경)
+  id: ID; // ⚠️ 정수형 ID (기존 string에서 변경)
   email: string;
   username: string;
   bio: string | null;
@@ -72,7 +99,7 @@ export interface User extends Timestamps {
 
 /** 공개용 사용자 정보 (패스워드 해시 제외) */
 export interface PublicUser {
-  id: number;
+  id: ID;
   username: string;
   bio: string | null;
   profileImageUrl: string | null;
@@ -345,3 +372,164 @@ export type PhotoData = PhotoDetail;
 
 /** @deprecated SeriesData 대신 SeriesDetail 사용 */
 export type SeriesData = SeriesDetail;
+
+// =============================================================================
+// 🛡️ 타입 가드 함수들
+// =============================================================================
+
+/** User 타입 가드 */
+export function isUser(value: unknown): value is User {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as User).id === 'number' &&
+    typeof (value as User).email === 'string' &&
+    typeof (value as User).username === 'string'
+  );
+}
+
+/** PhotoDetail 타입 가드 */
+export function isPhotoDetail(value: unknown): value is PhotoDetail {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as PhotoDetail).id === 'number' &&
+    typeof (value as PhotoDetail).title === 'string' &&
+    typeof (value as PhotoDetail).imageUrl === 'string' &&
+    typeof (value as PhotoDetail).createdAt === 'string'
+  );
+}
+
+/** CommentDetail 타입 가드 */
+export function isCommentDetail(value: unknown): value is CommentDetail {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as CommentDetail).id === 'number' &&
+    typeof (value as CommentDetail).content === 'string' &&
+    isUser((value as CommentDetail).author)
+  );
+}
+
+/** ApiError 타입 가드 */
+export function isApiError(value: unknown): value is ApiError {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as ApiError).code === 'string' &&
+    typeof (value as ApiError).message === 'string'
+  );
+}
+
+// =============================================================================
+// 🔧 유틸리티 함수들
+// =============================================================================
+
+/** 안전한 ID 변환 */
+export function toID(value: unknown): ID | null {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value as ID;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed as ID;
+    }
+  }
+  return null;
+}
+
+/** 객체가 비어있는지 확인 */
+export function isEmpty(obj: Record<string, unknown>): boolean {
+  return Object.keys(obj).length === 0;
+}
+
+/** 두 객체의 얕은 비교 */
+export function shallowEqual(obj1: Record<string, unknown>, obj2: Record<string, unknown>): boolean {
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+  
+  for (const key of keys1) {
+    if (obj1[key] !== obj2[key]) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/** 날짜 문자열 유효성 검사 */
+export function isValidDateString(dateString: string): boolean {
+  const date = new Date(dateString);
+  return !isNaN(date.getTime()) && dateString.includes('T');
+}
+
+/** API 응답에서 데이터 추출 */
+export function extractData<T>(response: ApiResponse<T>): T | null {
+  if (response.success && response.data) {
+    return response.data;
+  }
+  return null;
+}
+
+/** 페이지네이션 초기값 생성 */
+export function createInitialPagination(): PaginationMeta {
+  return {
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  };
+}
+
+// =============================================================================
+// 🎨 상수 정의
+// =============================================================================
+
+/** 기본 페이지네이션 설정 */
+export const DEFAULT_PAGINATION = {
+  page: 1,
+  limit: 20,
+} as const;
+
+/** 지원되는 이미지 타입 */
+export const SUPPORTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+] as const;
+
+/** 최대 파일 크기 (10MB) */
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/** API 에러 코드 */
+export const API_ERROR_CODES = {
+  // 인증 관련
+  AUTH_REQUIRED: 'AUTH_REQUIRED',
+  AUTH_INVALID: 'AUTH_INVALID',
+  AUTH_EXPIRED: 'AUTH_EXPIRED',
+  
+  // 권한 관련
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+  
+  // 리소스 관련
+  RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
+  RESOURCE_ALREADY_EXISTS: 'RESOURCE_ALREADY_EXISTS',
+  
+  // 유효성 검사
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  
+  // 네트워크
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  TIMEOUT_ERROR: 'TIMEOUT_ERROR',
+  
+  // 서버
+  SERVER_ERROR: 'SERVER_ERROR',
+} as const;

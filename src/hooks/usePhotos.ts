@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { apiClient, getErrorMessage } from '@/lib/api-client';
 import { PhotoDetail } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -86,27 +86,28 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
         setError(message);
     }, []);
 
+    // 로딩 중복 방지를 위한 ref
+    const loadingRef = useRef(false);
+
     /** 사진 목록 로드 */
     const loadPhotos = useCallback(async (
         page: number = 1, 
         append: boolean = false
     ): Promise<PhotoDetail[]> => {
         // 이미 로딩 중이면 중복 호출 방지
-        if (loading) {
+        if (loadingRef.current) {
             console.log('🚫 이미 로딩 중이므로 중복 호출 방지');
             return [];
         }
 
         try {
+            loadingRef.current = true;
             setLoading(true);
             setError(null);
             
-            // console.log('🔍 API 호출 시작:', { sortBy, page });
             const response = await apiClient.getPhotos({
                 sortBy, // 백엔드가 지원하는 파라미터만 전송
-                // page, limit은 백엔드에서 아직 구현되지 않음
             });
-            // console.log('✅ API 응답 성공:', response);
 
             // API 클라이언트에서 이미 올바른 형식으로 반환됨
             const newPhotos = response as PhotoDetail[];
@@ -133,9 +134,10 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
             handleError(error);
             return [];
         } finally {
+            loadingRef.current = false;
             setLoading(false);
         }
-    }, [sortBy, handleError, loading]);
+    }, [sortBy, handleError]);
 
 
     // =============================================================================
@@ -250,10 +252,10 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
     }, [autoLoad]);
 
     // =============================================================================
-    // 🎯 반환값
+    // 🎯 반환값 (메모화)
     // =============================================================================
 
-    return {
+    return useMemo(() => ({
         // State
         photos,
         loading,
@@ -267,5 +269,16 @@ export const usePhotos = (options: UsePhotosOptions = {}): UsePhotosReturn => {
         refresh,
         toggleLike,
         clearError,
-    };
+    }), [
+        photos, 
+        loading, 
+        initialLoading, 
+        hasMore, 
+        error, 
+        currentPage,
+        loadMore,
+        refresh,
+        toggleLike,
+        clearError
+    ]);
 };

@@ -158,7 +158,16 @@ class TokenManager {
 
     /** 토큰 유효성 확인 */
     isValid(): boolean {
-        return this.getToken() !== null;
+        const token = this.getToken();
+        if (!token) return false;
+        
+        try {
+            // JWT 토큰 구조 검증 (간단한 형식 체크)
+            const parts = token.split('.');
+            return parts.length === 3;
+        } catch {
+            return false;
+        }
     }
 }
 
@@ -241,14 +250,28 @@ export class ApiClient {
         let responseData: unknown;
 
         try {
-            responseData = await response.json();
-            console.log('📨 응답 데이터 파싱 성공:', responseData);
+            // Content-Type 확인
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await response.json();
+                console.log('📨 응답 데이터 파싱 성공:', responseData);
+            } else {
+                // JSON이 아닌 응답 처리
+                const text = await response.text();
+                console.warn('⚠️ 비JSON 응답:', { contentType, text });
+                throw new ApiClientError(
+                    'INVALID_CONTENT_TYPE',
+                    response.status,
+                    'JSON 형식의 응답이 아닙니다.'
+                );
+            }
         } catch (error) {
             console.error('❌ JSON 파싱 실패:', error);
             throw new ApiClientError(
                 'PARSE_ERROR',
                 response.status,
-                '응답 데이터를 파싱할 수 없습니다.'
+                '응답 데이터를 파싱할 수 없습니다.',
+                { originalError: error instanceof Error ? error.message : String(error) }
             );
         }
 
@@ -300,6 +323,26 @@ export class ApiClient {
                 'TIMEOUT_ERROR',
                 0,
                 '요청 시간이 초과되었습니다. 인터넷 연결을 확인해주세요.'
+            );
+        }
+
+        // TypeError는 보통 네트워크 연결 문제
+        if (originalError.name === 'TypeError') {
+            return new ApiClientError(
+                'NETWORK_ERROR',
+                0,
+                '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.',
+                { originalError: originalError.message }
+            );
+        }
+
+        // CORS 에러
+        if (originalError.message.includes('CORS')) {
+            return new ApiClientError(
+                'CORS_ERROR',
+                0,
+                'CORS 정책으로 인해 요청이 차단되었습니다.',
+                { originalError: originalError.message }
             );
         }
 
@@ -711,7 +754,29 @@ export function getErrorMessage(error: unknown): string {
 
 /** 네트워크 연결 상태 확인 */
 export function isOnline(): boolean {
+    // 서버사이드에서는 true 반환
+    if (typeof navigator === 'undefined') return true;
     return navigator.onLine;
+}
+
+/** 에러 유형 분류 */
+export function getErrorType(error: unknown): 'network' | 'auth' | 'server' | 'client' | 'unknown' {
+    if (error instanceof ApiClientError) {
+        if (error.isNetworkError) return 'network';
+        if (error.isAuthError) return 'auth';
+        if (error.isServerError) return 'server';
+        if (error.isClientError) return 'client';
+    }
+    return 'unknown';
+}
+
+/** 에러에 따른 재시도 가능 여부 */
+export function isRetryableError(error: unknown): boolean {
+    if (error instanceof ApiClientError) {
+        // 네트워크 에러와 일부 서버 에러는 재시도 가능
+        return error.isNetworkError || (error.isServerError && error.statusCode >= 500);
+    }
+    return false;
 }
 
 /** API 요청 재시도 헬퍼 */
@@ -728,8 +793,16 @@ export async function retryApiCall<T>(
         } catch (error) {
             lastError = error as Error;
             
+            // 재시도 불가능한 에러는 즉시 throw
+            if (!isRetryableError(error)) {
+                throw error;
+            }
+            
             if (i < maxRetries - 1) {
-                await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+                // 지수 백오프 + 지터 추가
+                const backoffDelay = delay * Math.pow(2, i);
+                const jitter = Math.random() * 1000;
+                await new Promise(resolve => setTimeout(resolve, backoffDelay + jitter));
             }
         }
     }
