@@ -52,8 +52,8 @@ export default function Home() {
     }, [selectedPhotoId, photos]);
 
     const handleFollow = useCallback((userId: number) => {
-        // TODO: 팔로우 기능 구현 예정
-        console.log('Follow user:', userId);
+        // 팔로우 기능은 향후 구현 예정
+        console.log('팔로우 기능:', userId);
     }, []);
 
     return (

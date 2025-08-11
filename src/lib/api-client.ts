@@ -411,6 +411,60 @@ export class ApiClient {
         return this.get<User>('/users/me');
     }
 
+    /** 내 프로필 조회 */
+    async getMyProfile(): Promise<User> {
+        return this.get<User>('/users/me');
+    }
+
+    /** 다른 사용자 프로필 조회 */
+    async getUserProfile(userId: number): Promise<User> {
+        return this.get<User>(`/users/${userId}`);
+    }
+
+    /** 사용자의 사진 목록 조회 */
+    async getUserPhotos(userId: number): Promise<PhotoDetail[]> {
+        const response = await this.get<unknown[]>(`/users/${userId}/photos`);
+        
+        // S3 URL을 프록시 URL로 변환하는 함수 (getPhotos와 동일한 로직)
+        const convertToProxyUrl = (url: string, photoId: number, isThumbnail: boolean = false) => {
+            if (url.includes('/api/images/')) {
+                return url;
+            }
+            
+            const baseUrl = API_CONFIG.baseUrl.replace('/api', '');
+            const endpoint = isThumbnail ? '/api/images/thumbnails/' : '/api/images/';
+            return `${baseUrl}${endpoint}${photoId}`;
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappedPhotos = (response as any[]).map(photo => ({
+            id: photo.id,
+            title: photo.title || '제목 없음',
+            description: photo.description || null,
+            imageUrl: convertToProxyUrl(photo.imageUrl || '', photo.id),
+            thumbnailUrl: convertToProxyUrl(photo.thumbnailUrl || photo.imageUrl || '', photo.id, true),
+            author: {
+                id: photo.author?.id || photo.userId,
+                username: photo.author?.username || 'unknown',
+                bio: photo.author?.bio || null,
+                profileImageUrl: photo.author?.profileImageUrl || null,
+                createdAt: photo.author?.createdAt || photo.createdAt
+            },
+            userId: photo.userId,
+            viewCount: photo.viewCount || 0,
+            isPublic: photo.isPublic !== false,
+            deletedAt: photo.deletedAt || null,
+            likesCount: photo.likesCount || 0,
+            commentsCount: photo.commentsCount || 0,
+            isLikedByCurrentUser: photo.isLikedByCurrentUser || false,
+            isOwner: photo.isOwner || false,
+            createdAt: photo.createdAt,
+            updatedAt: photo.updatedAt || photo.createdAt
+        }));
+
+        return mappedPhotos;
+    }
+
     /** 프로필 수정 */
     async updateProfile(profileData: UpdateProfileRequest): Promise<User> {
         return this.put<User>('/users/me/profile', profileData);

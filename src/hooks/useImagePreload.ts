@@ -319,7 +319,7 @@ export function useImageLoadPerformance() {
                 totalLoads: newTotalLoads,
                 successfulLoads: newSuccessfulLoads,
                 averageLoadTime: Math.round(newAverageLoadTime),
-                cacheHitRate: prev.cacheHitRate, // TODO: 캐시 히트율 계산 로직 추가
+                cacheHitRate: prev.cacheHitRate, // 캐시 히트율은 향후 구현 예정
             };
         });
     }, []);
