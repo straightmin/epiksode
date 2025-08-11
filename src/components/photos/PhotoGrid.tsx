@@ -47,7 +47,14 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
         return new Array(cols).fill(0);
     }, []);
 
-    // 리사이즈 핸들러
+    // 초기 컬럼 설정 (마운트 시 한 번만 실행)
+    useEffect(() => {
+        const initialColumns = calculateColumns();
+        setColumnCount(initialColumns);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // 빈 배열로 마운트 시 한 번만 실행
+
+    // 리사이즈 핸들러 (별도 effect로 분리)
     useEffect(() => {
         const handleResize = () => {
             const newColumnCount = calculateColumns();
@@ -57,7 +64,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
         };
 
         window.addEventListener("resize", handleResize);
-        handleResize(); // 초기 설정
+        // handleResize(); // 제거 - 무한루프의 원인
 
         return () => window.removeEventListener("resize", handleResize);
     }, [calculateColumns, columnCount]);

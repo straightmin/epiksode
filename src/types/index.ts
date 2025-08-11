@@ -23,7 +23,7 @@ export interface ApiResponse<T> {
 export interface ApiError {
   code: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /** 페이지네이션 메타데이터 */
@@ -151,7 +151,7 @@ export interface PhotoDetail extends Photo {
 }
 
 /** 사진 목록 조회 응답 */
-export interface PhotoListResponse extends PaginatedResponse<PhotoDetail> {}
+export type PhotoListResponse = PaginatedResponse<PhotoDetail>;
 
 /** 사진 업로드 요청 */
 export interface CreatePhotoRequest {
@@ -212,7 +212,7 @@ export interface CreateCommentRequest {
 }
 
 /** 댓글 목록 조회 응답 */
-export interface CommentListResponse extends PaginatedResponse<CommentDetail> {}
+export type CommentListResponse = PaginatedResponse<CommentDetail>;
 
 // =============================================================================
 // ❤️ 좋아요 관련 타입

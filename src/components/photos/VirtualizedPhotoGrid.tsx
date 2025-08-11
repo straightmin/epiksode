@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoCard from "./PhotoCard";
-import { PhotoData } from "@/types";
+import { PhotoDetail } from "@/types";
 
 interface VirtualizedPhotoGridProps {
-    photos: PhotoData[];
-    onLike?: (photoId: string) => void;
-    onPhotoClick?: (photoId: string) => void;
+    photos: PhotoDetail[];
+    onLike?: (photoId: number) => void;
+    onPhotoClick?: (photoId: number) => void;
     onLoadMore?: () => void;
     hasMore?: boolean;
     loading?: boolean;
@@ -48,7 +48,18 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
         return 5; // desktop large
     }, [columns]);
 
-    // 리사이즈 핸들러
+    // 초기 설정 (마운트 시 한 번만 실행)
+    useEffect(() => {
+        const initialColumns = calculateColumns();
+        setColumnCount(initialColumns);
+        
+        if (containerRef.current) {
+            setContainerHeight(containerRef.current.clientHeight);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // 빈 배열로 마운트 시 한 번만 실행
+
+    // 리사이즈 핸들러 (별도 effect로 분리)
     useEffect(() => {
         const handleResize = () => {
             const newColumnCount = calculateColumns();
@@ -62,7 +73,7 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
         };
 
         window.addEventListener("resize", handleResize);
-        handleResize();
+        // handleResize(); // 제거 - 무한루프의 원인
 
         return () => window.removeEventListener("resize", handleResize);
     }, [calculateColumns, columnCount]);
@@ -94,7 +105,7 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
 
     // 사진들을 컬럼별로 분배 (균등 분배 알고리즘)
     const photoColumns = useMemo(() => {
-        const columns: PhotoData[][] = Array.from({ length: columnCount }, () => []);
+        const columns: PhotoDetail[][] = Array.from({ length: columnCount }, () => []);
         const columnHeights = new Array(columnCount).fill(0);
 
         photos.forEach((photo) => {
@@ -125,7 +136,7 @@ const VirtualizedPhotoGrid: React.FC<VirtualizedPhotoGridProps> = ({
     }, [scrollTop, containerHeight, itemHeight, overscan, photoColumns]);
 
     // Performance optimization: 메모이제이션된 렌더링
-    const renderPhotoColumn = useCallback((columnPhotos: PhotoData[], columnIndex: number) => {
+    const renderPhotoColumn = useCallback((columnPhotos: PhotoDetail[], columnIndex: number) => {
         const { startIndex, endIndex } = virtualizedData;
         
         return (
