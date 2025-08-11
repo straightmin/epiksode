@@ -191,14 +191,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const initializeAuth = async () => {
             // 토큰이 있으면 사용자 정보 로드
             if (apiClient.isAuthenticated()) {
-                await refreshUser();
+                setIsLoading(true);
+                setError(null);
+                
+                try {
+                    const currentUser = await apiClient.getCurrentUser();
+                    setUser(currentUser);
+                } catch (error) {
+                    handleError(error);
+                } finally {
+                    setIsLoading(false);
+                }
             } else {
                 setIsLoading(false);
             }
         };
 
         initializeAuth();
-    }, [refreshUser]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // ← Empty dependency array - runs only once on mount
 
     /** 토큰 만료 감지 */
     useEffect(() => {
@@ -218,16 +229,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     /** 네트워크 재연결 시 사용자 정보 새로고침 */
     useEffect(() => {
-        const handleOnline = () => {
-            if (isAuthenticated && !isLoading) {
+        const handleOnline = async () => {
+            if (isAuthenticated && !isLoading && apiClient.isAuthenticated()) {
                 console.log('Network reconnected, refreshing user...');
-                refreshUser();
+                setIsLoading(true);
+                setError(null);
+                
+                try {
+                    const currentUser = await apiClient.getCurrentUser();
+                    setUser(currentUser);
+                } catch (error) {
+                    handleError(error);
+                } finally {
+                    setIsLoading(false);
+                }
             }
         };
 
         window.addEventListener('online', handleOnline);
         return () => window.removeEventListener('online', handleOnline);
-    }, [isAuthenticated, isLoading, refreshUser]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated, isLoading]); // Removed refreshUser from dependencies
 
     // =============================================================================
     // 🎯 컨텍스트 값 구성

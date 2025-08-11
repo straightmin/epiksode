@@ -6,7 +6,7 @@ import { useThemeContext } from "../../../frontend-theme-system/components/Theme
 import PhotoGrid from "../../components/photos/PhotoGrid";
 import { Search, Grid, List } from "lucide-react";
 import { PhotoDetail } from "@/types";
-import { apiClient } from '@/lib/api-client';
+// import { apiClient } from '@/lib/api-client';
 
 // 임시 검색 결과 데이터
 const mockSearchResults = {
@@ -89,16 +89,15 @@ function SearchContent() {
 
         setLoading(true);
         
-        // 실제 환경에서는 API 호출
+        // 검색 API는 추후 구현 예정
         setTimeout(() => {
-            const results = mockSearchResults[query as keyof typeof mockSearchResults] || [];
-            setSearchResults(results);
+            setSearchResults([]); // 빈 결과 반환
             setLoading(false);
         }, 500);
     }, [query]);
 
     // 좋아요 핸들러
-    const handleLike = useCallback((photoId: string) => {
+    const handleLike = useCallback((photoId: number) => {
         setSearchResults(prevResults =>
             prevResults.map(photo =>
                 photo.id === photoId
@@ -115,7 +114,7 @@ function SearchContent() {
     // 북마크 핸들러
 
     // 사진 클릭 핸들러
-    const handlePhotoClick = useCallback((photoId: string) => {
+    const handlePhotoClick = useCallback((photoId: number) => {
         console.log("Photo clicked:", photoId);
         // 모달 열기 또는 상세 페이지로 이동
     }, []);

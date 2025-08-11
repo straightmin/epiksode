@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Camera, MapPin, Calendar, Heart, Bookmark } from "lucide-react";
 import PhotoGrid from "../../components/photos/PhotoGrid";
-import { PhotoDetail } from '@/types';
-import { apiClient } from '@/lib/api-client';
+// import { PhotoDetail } from '@/types';
+// import { apiClient } from '@/lib/api-client';
 
 // 임시 사용자 데이터
 const mockUser = {
@@ -334,7 +334,7 @@ export default function ProfilePage() {
                 <div>
                     {activeTab === 'photos' && (
                         <PhotoGrid
-                            photos={mockUserPhotos}
+                            photos={[]} // 프로필 페이지용 사진 로직은 추후 구현
                             hasMore={false}
                             loading={false}
                         />

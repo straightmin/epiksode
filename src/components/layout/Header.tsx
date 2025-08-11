@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
@@ -23,14 +23,14 @@ const Header: React.FC = () => {
     const searchRef = useRef<HTMLDivElement>(null);
 
     // 임시 검색 제안 데이터
-    const mockSuggestions: SearchSuggestion[] = [
+    const mockSuggestions: SearchSuggestion[] = useMemo(() => [
         { id: "1", type: "user", text: "김자연", subtitle: "@nature_kim", image: "" },
         { id: "2", type: "user", text: "박도시", subtitle: "@city_park", image: "" },
         { id: "3", type: "tag", text: "자연", subtitle: "1,234개 사진" },
         { id: "4", type: "tag", text: "도시", subtitle: "2,156개 사진" },
         { id: "5", type: "location", text: "지리산 국립공원", subtitle: "위치" },
         { id: "6", type: "location", text: "제주도", subtitle: "위치" },
-    ];
+    ], []);
 
     // 검색 제안 필터링
     const filterSuggestions = useCallback((query: string) => {
@@ -45,7 +45,7 @@ const Header: React.FC = () => {
         );
 
         setSearchSuggestions(filtered.slice(0, 6)); // 최대 6개 제한
-    }, []);
+    }, [mockSuggestions]);
 
     // 검색어 변경 핸들러
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

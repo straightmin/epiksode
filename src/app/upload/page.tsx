@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
+import Image from "next/image";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
@@ -49,7 +50,7 @@ export default function UploadPage() {
         newFiles.forEach(uploadFile => {
             simulateUpload(uploadFile.id);
         });
-    }, []);
+    }, [uploadFiles.length]);
 
     // 업로드 시뮬레이션
     const simulateUpload = (fileId: string) => {
@@ -336,9 +337,11 @@ export default function UploadPage() {
                                 >
                                     {/* Image Preview */}
                                     <div className="relative flex-shrink-0">
-                                        <img
+                                        <Image
                                             src={uploadFile.preview}
                                             alt="Preview"
+                                            width={80}
+                                            height={80}
                                             className="w-20 h-20 object-cover rounded-lg"
                                         />
                                         
