@@ -16,10 +16,23 @@
 
 ### 기술 스택
 
-- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
-- **Backend**: Express.js + PostgreSQL + Prisma
+- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS + 커스텀 테마 시스템
+- **Backend**: Express.js + PostgreSQL + Prisma + JWT 인증
+- **Storage**: AWS S3 + 이미지 프록시 시스템
 - **Build Tool**: Turbopack (개발 환경)
-- **Code Quality**: ESLint + Prettier
+- **Code Quality**: ESLint + Prettier + 엄격한 TypeScript
+
+### 현재 구현 상태
+
+✅ **완료된 핵심 기능**
+- 백엔드 API 완전 연동 (목업 데이터 제거)
+- JWT 기반 사용자 인증 (로그인/회원가입)  
+- S3 이미지 업로드 & 프록시 시스템
+- 반응형 사진 갤러리 (무한 스크롤)
+- 사용자 프로필 페이지
+- 다크/라이트 모드 테마 시스템
+
+🚧 **개발 진행률**: **약 60% 완료** (8주 계획 중 4주차)
 
 ---
 
@@ -28,15 +41,24 @@
 ```
 epiksode/
 ├── src/
-│   ├── app/                    # Next.js App Router
+│   ├── app/                    # Next.js App Router (페이지)
 │   ├── components/
-│   │   └── layout/            # 레이아웃 컴포넌트
-│   └── ...
-├── frontend-theme-system/      # 테마 시스템
-├── docs/                      # 프로젝트 문서
+│   │   ├── layout/            # 레이아웃 (Header, Sidebar)
+│   │   ├── photos/            # 사진 관련 (PhotoGrid, PhotoModal)
+│   │   ├── images/            # 이미지 처리 (PhotoImage)
+│   │   ├── common/            # 공통 컴포넌트 (ErrorBoundary)
+│   │   └── ui/                # 기본 UI 컴포넌트
+│   ├── contexts/              # React 컨텍스트 (AuthContext)
+│   ├── hooks/                 # 커스텀 훅
+│   ├── lib/                   # 유틸리티 (API 클라이언트)
+│   └── types/                 # TypeScript 타입 정의
+├── frontend-theme-system/      # 커스텀 테마 시스템
+├── docs/                      # 개발 문서 및 API 가이드
+├── public/images/             # 정적 이미지 자원
 ├── .editorconfig              # 에디터 설정
 ├── .prettierrc                # 코드 포매팅
-└── .vscode/settings.json      # VS Code 설정
+├── .vscode/settings.json      # VS Code 설정
+└── CLAUDE.md                  # 개발 가이드
 ```
 
 ---
@@ -119,46 +141,54 @@ npm run lint
 
 ## 📋 개발 로드맵
 
-### 1주차 ✅ (완료)
+### 1-2주차 ✅ (완료)
 
-- [x] 개발 환경 설정
-- [x] 기본 레이아웃 구조
-- [x] 프로젝트 구조 확립
+- [x] 개발 환경 설정 (ESLint, Prettier, TypeScript)
+- [x] 기본 레이아웃 구조 (Header, Sidebar, MainLayout)
+- [x] 프로젝트 구조 확립 (App Router, 컴포넌트 구조)
+- [x] 테마 시스템 구현 (커스텀 테마, 다크 모드)
+- [x] 기본 UI 컴포넌트 (Button, Card, Dialog 등)
 
-### 2주차 (진행 예정)
+### 3-4주차 ✅ (완료)
 
-- [ ] 테마 시스템 구현
-- [ ] 사진 업로드 기능
-- [ ] 기본 UI 컴포넌트
+- [x] **백엔드 API 완전 연동**
+- [x] **JWT 인증 시스템** (로그인, 회원가입, 인증 상태 관리)
+- [x] **S3 이미지 프록시 시스템** (썸네일, 원본 이미지)
+- [x] **사진 업로드 기능** (드래그 앤 드롭, 진행률 표시)
+- [x] **사진 표시 시스템** (PhotoGrid, PhotoModal, 무한스크롤)
+- [x] **프로필 페이지** (사용자 정보, 사진 갤러리)
+- [x] **반응형 디자인** (모바일, 태블릿, 데스크톱)
 
-### 3-4주차
+### 5-6주차 (진행 예정)
 
-- [ ] 시리즈 관리 기능
-- [ ] API 통합
-- [ ] 사용자 인증
+- [ ] **소셜 기능** (좋아요, 댓글, 북마크)
+- [ ] **팔로우 시스템** (팔로우/언팔로우, 팔로잉 피드)
+- [ ] **검색 기능** (사진 검색, 사용자 검색, 태그 검색)
+- [ ] **시리즈 관리** (시리즈 생성, 편집, 슬라이드쇼)
 
-### 5-6주차
+### 7-8주차 (계획)
 
-- [ ] 소셜 기능 (좋아요, 댓글)
-- [ ] 팔로우 시스템
-- [ ] 검색 기능
-
-### 7-8주차
-
-- [ ] 성능 최적화
-- [ ] 반응형 완성
-- [ ] 배포 준비
+- [ ] **성능 최적화** (이미지 최적화, 코드 분할, 캐싱)
+- [ ] **고급 기능** (알림 시스템, 컬렉션)
+- [ ] **배포 준비** (프로덕션 빌드, CI/CD, 모니터링)
 
 ---
 
 ## 🔗 주요 리소스
 
-### 개발 문서
+### 📚 개발 문서
 
-- [프론트엔드 개발 계획](docs/FRONTEND_DEVELOPMENT_PLAN.md)
-- [테마 시스템 가이드](frontend-theme-system/)
+- [**CLAUDE.md**](CLAUDE.md) - 개발자 필수 가이드 (API, 인증, 환경설정)
+- [프론트엔드 개발 계획](docs/project/frontend/FRONTEND_DEVELOPMENT_PLAN.md)
+- [API 문서](docs/api/api_documentation.md) - 백엔드 API 명세
+- [인증 가이드](docs/collaboration/authentication_guide.md) - JWT 인증 시스템
+- [개발 환경 설정](docs/collaboration/development_setup.md) - 로컬 개발 가이드
 
-### 외부 리소스
+### 🎨 디자인 시스템
+
+- [테마 시스템](frontend-theme-system/) - 커스텀 테마 및 디자인 컴포넌트
+
+### 🌐 외부 리소스
 
 - [Next.js 15 문서](https://nextjs.org/docs)
 - [Tailwind CSS](https://tailwindcss.com/docs)
