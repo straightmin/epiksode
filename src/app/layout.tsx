@@ -3,6 +3,7 @@ import { Outfit, Gloock } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../../frontend-theme-system/components/ThemeProvider";
 import MainLayout from "../components/layout/MainLayout";
+import { AuthProvider } from "../contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
 
 const outfitFont = Outfit({
@@ -91,7 +92,9 @@ export default function RootLayout({
                 } ${gloockFont.variable} font-outfit antialiased`}
             >
                 <ThemeProvider defaultDark={false} storageKey="epiksode-theme">
-                    <MainLayout>{children}</MainLayout>
+                    <AuthProvider>
+                        <MainLayout>{children}</MainLayout>
+                    </AuthProvider>
                     <Toaster
                         position="top-center"
                         toastOptions={{

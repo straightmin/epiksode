@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import Image from "next/image";
 import { useThemeContext } from "../../../../frontend-theme-system/components/ThemeProvider";
 // import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { GripVertical, X, Plus, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { X, Plus, Save, ArrowUp, ArrowDown } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface SeriesPhoto {
@@ -266,9 +267,11 @@ export default function CreateSeriesPage() {
                                     </div>
 
                                     {/* Photo Preview */}
-                                    <img
+                                    <Image
                                         src={photo.imageUrl}
                                         alt={photo.title}
+                                        width={64}
+                                        height={48}
                                         className="w-16 h-12 object-cover rounded"
                                     />
 

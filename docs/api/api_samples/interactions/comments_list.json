@@ -1,0 +1,84 @@
+{
+  "success": true,
+  "message": "댓글 목록을 성공적으로 조회했습니다.",
+  "data": {
+    "data": [
+      {
+        "id": 1,
+        "userId": 2,
+        "content": "와 대박! 정말 아름다운 사진이네요! 🔥",
+        "photoId": 1,
+        "seriesId": null,
+        "parentId": null,
+        "createdAt": "2024-02-15T08:15:00.000Z",
+        "updatedAt": "2024-02-15T08:15:00.000Z",
+        "deletedAt": null,
+        "author": {
+          "id": 2,
+          "username": "city_park",
+          "bio": "도시의 야경과 건축물의 아름다움을 담는 사진가입니다.",
+          "profileImageUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+          "createdAt": "2024-01-16T11:45:00.000Z"
+        },
+        "likesCount": 3,
+        "repliesCount": 1,
+        "replies": [
+          {
+            "id": 5,
+            "userId": 1,
+            "content": "감사합니다! 지리산 국립공원입니다 😊",
+            "photoId": 1,
+            "seriesId": null,
+            "parentId": 1,
+            "createdAt": "2024-02-15T09:30:00.000Z",
+            "updatedAt": "2024-02-15T09:30:00.000Z",
+            "deletedAt": null,
+            "author": {
+              "id": 1,
+              "username": "nature_kim",
+              "bio": "자연의 아름다움을 담는 사진가입니다.",
+              "profileImageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+              "createdAt": "2024-01-15T09:30:00.000Z"
+            },
+            "likesCount": 1,
+            "repliesCount": 0,
+            "isLikedByCurrentUser": false,
+            "isOwner": false
+          }
+        ],
+        "isLikedByCurrentUser": true,
+        "isOwner": false
+      },
+      {
+        "id": 12,
+        "userId": 4,
+        "content": "이런 풍경을 직접 보고 싶어요. 어디인가요?",
+        "photoId": 1,
+        "seriesId": null,
+        "parentId": null,
+        "createdAt": "2024-02-16T14:22:00.000Z",
+        "updatedAt": "2024-02-16T14:22:00.000Z",
+        "deletedAt": null,
+        "author": {
+          "id": 4,
+          "username": "sea_choi",
+          "bio": "바다와 해안의 아름다웄 순간들을 기록하는 사진가입니다.",
+          "profileImageUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+          "createdAt": "2024-01-18T16:10:00.000Z"
+        },
+        "likesCount": 0,
+        "repliesCount": 0,
+        "isLikedByCurrentUser": false,
+        "isOwner": false
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 8,
+      "totalPages": 1,
+      "hasNext": false,
+      "hasPrev": false
+    }
+  }
+}

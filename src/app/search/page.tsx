@@ -4,77 +4,10 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoGrid from "../../components/photos/PhotoGrid";
-import { Search, Grid, List } from "lucide-react";
-import { PhotoData } from "@/types";
-
-// 임시 검색 결과 데이터
-const mockSearchResults = {
-    "자연": [
-        {
-            id: "1",
-            imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
-            title: "산속의 아침",
-            description: "새벽 안개가 피어오르는 산속에서 맞이한 평화로운 아침의 순간입니다.",
-            photographer: { 
-                id: "user1", 
-                name: "김자연", 
-                username: "nature_kim", 
-                avatar: "", 
-                isFollowing: false 
-            },
-            likes: 1247,
-            comments: 23,
-            views: 5432,
-            isLiked: false,
-            isBookmarked: false,
-            isEpicMoment: true,
-            location: "지리산 국립공원",
-            createdAt: "2024-08-09T06:30:00Z",
-        },
-        {
-            id: "3",
-            imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=700&fit=crop",
-            title: "숲속의 오솔길",
-            description: "햇살이 스며드는 숲속 길을 따라 걸으며 찍은 사진",
-            photographer: { 
-                id: "user3", 
-                name: "이숲길", 
-                username: "forest_lee", 
-                avatar: "", 
-                isFollowing: false 
-            },
-            likes: 564,
-            comments: 15,
-            views: 1234,
-            isLiked: false,
-            isBookmarked: true,
-            location: "북한산 둘레길",
-            createdAt: "2024-08-07T14:20:00Z",
-        },
-    ],
-    "도시": [
-        {
-            id: "2",
-            imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=500&fit=crop",
-            title: "도시의 야경",
-            description: "번화가 네온사인이 만들어내는 환상적인 밤의 풍경",
-            photographer: { 
-                id: "user2", 
-                name: "박도시", 
-                username: "city_park", 
-                avatar: "", 
-                isFollowing: true 
-            },
-            likes: 892,
-            comments: 41,
-            views: 2156,
-            isLiked: true,
-            isBookmarked: false,
-            location: "강남역 일대",
-            createdAt: "2024-08-08T22:15:00Z",
-        },
-    ],
-};
+import { Search, Grid, List, Camera, User } from "lucide-react";
+import { PhotoDetail } from "@/types";
+import { getErrorMessage } from '@/lib/api-client';
+import { usePhotos } from '@/hooks/usePhotos';
 
 // 검색 파라미터를 사용하는 내부 컴포넌트
 function SearchContent() {
@@ -82,66 +15,62 @@ function SearchContent() {
     const searchParams = useSearchParams();
     const query = searchParams?.get('q') || '';
     
-    const [searchResults, setSearchResults] = useState<PhotoData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'users'>('all');
+    const [searchResults, setSearchResults] = useState<PhotoDetail[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'users'>('photos');
     const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'relevant'>('relevant');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+    // 전체 사진 목록 가져오기 (검색 기능이 백엔드에 없으므로 클라이언트에서 필터링)
+    const { photos: allPhotos, loading: photosLoading, error: photosError } = usePhotos({
+        sortBy: sortBy === 'recent' ? 'latest' : 'popular',
+        autoLoad: true
+    });
+
     // 검색 실행
-    useEffect(() => {
-        if (!query) {
+    const performSearch = useCallback(async () => {
+        if (!query.trim()) {
             setSearchResults([]);
-            setLoading(false);
             return;
         }
 
-        setLoading(true);
-        
-        // 실제 환경에서는 API 호출
-        setTimeout(() => {
-            const results = mockSearchResults[query as keyof typeof mockSearchResults] || [];
-            setSearchResults(results);
+        try {
+            setLoading(true);
+            setError(null);
+
+            // 백엔드에 검색 API가 없으므로 클라이언트에서 필터링
+            const filteredResults = allPhotos.filter(photo => {
+                const titleMatch = photo.title.toLowerCase().includes(query.toLowerCase());
+                const descriptionMatch = photo.description?.toLowerCase().includes(query.toLowerCase());
+                const authorMatch = photo.author?.username?.toLowerCase().includes(query.toLowerCase());
+                
+                return titleMatch || descriptionMatch || authorMatch;
+            });
+
+            setSearchResults(filteredResults);
+        } catch (error) {
+            console.error('검색 실패:', error);
+            setError(getErrorMessage(error));
+        } finally {
             setLoading(false);
-        }, 500);
-    }, [query]);
+        }
+    }, [query, allPhotos]);
 
-    // 좋아요 핸들러
-    const handleLike = useCallback((photoId: string) => {
-        setSearchResults(prevResults =>
-            prevResults.map(photo =>
-                photo.id === photoId
-                    ? {
-                        ...photo,
-                        isLiked: !photo.isLiked,
-                        likes: photo.isLiked ? photo.likes - 1 : photo.likes + 1,
-                    }
-                    : photo
-            )
-        );
-    }, []);
+    // 검색어 변경 시 검색 실행
+    useEffect(() => {
+        if (query && allPhotos.length > 0) {
+            performSearch();
+        } else if (!query) {
+            setSearchResults([]);
+        }
+    }, [query, performSearch, allPhotos]);
 
-    // 북마크 핸들러
-    const handleBookmark = useCallback((photoId: string) => {
-        setSearchResults(prevResults =>
-            prevResults.map(photo =>
-                photo.id === photoId
-                    ? { ...photo, isBookmarked: !photo.isBookmarked }
-                    : photo
-            )
-        );
-    }, []);
-
-    // 사진 클릭 핸들러
-    const handlePhotoClick = useCallback((photoId: string) => {
-        console.log("Photo clicked:", photoId);
-        // 모달 열기 또는 상세 페이지로 이동
-    }, []);
-
+    // 탭 데이터
     const tabs = [
-        { key: 'all' as const, label: '전체', count: searchResults.length },
-        { key: 'photos' as const, label: '사진', count: searchResults.length },
-        { key: 'users' as const, label: '사용자', count: 0 },
+        { key: 'photos' as const, label: '사진', icon: Camera, count: searchResults.length },
+        { key: 'users' as const, label: '사용자', icon: User, count: 0 }, // TODO: 사용자 검색 기능 구현 시 수정
+        { key: 'all' as const, label: '전체', icon: Search, count: searchResults.length },
     ];
 
     return (
@@ -153,235 +82,246 @@ function SearchContent() {
                     : theme.theme.colors.background.main,
             }}
         >
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="max-w-6xl mx-auto p-4">
                 {/* Search Header */}
                 <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Search
-                            size={24}
-                            style={{
-                                color: isDark
-                                    ? theme.theme.colors.primary.white
-                                    : theme.theme.colors.primary.black,
-                            }}
-                        />
-                        <h1
-                            className="text-2xl font-display font-bold"
-                            style={{
-                                color: isDark
-                                    ? theme.theme.colors.primary.white
-                                    : theme.theme.colors.primary.black,
-                            }}
-                        >
-&ldquo;{query}&rdquo; 검색 결과
-                        </h1>
-                    </div>
+                    <h1 
+                        className="text-2xl font-display font-bold mb-4"
+                        style={{
+                            color: isDark
+                                ? theme.theme.colors.primary.white
+                                : theme.theme.colors.primary.black,
+                        }}
+                    >
+                        {query ? `"${query}" 검색 결과` : '검색'}
+                    </h1>
 
-                    {searchResults.length > 0 && (
-                        <p
+                    {/* Search Stats */}
+                    {query && (
+                        <p 
                             className="text-sm mb-4"
                             style={{
                                 color: isDark
-                                    ? theme.theme.colors.primary.gray
+                                    ? theme.theme.colors.primary.lightGray
                                     : theme.theme.colors.primary.darkGray,
                             }}
                         >
-                            {searchResults.length.toLocaleString()}개의 결과를 찾았습니다
+                            {loading 
+                                ? '검색 중...' 
+                                : `${searchResults.length}개의 결과를 찾았습니다`
+                            }
                         </p>
                     )}
-                </div>
 
-                {/* Search Filters */}
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
                     {/* Tabs */}
-                    <div className="flex overflow-x-auto">
-                        {tabs.map((tab) => {
-                            const isActive = activeTab === tab.key;
-                            
-                            return (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => setActiveTab(tab.key)}
-                                    className={`
-                                        flex items-center gap-2 px-4 py-2 font-medium whitespace-nowrap
-                                        transition-all duration-300 border-b-2
-                                        ${isActive ? 'border-opacity-100' : 'border-opacity-0 hover:border-opacity-50'}
-                                    `}
-                                    style={{
-                                        color: isActive
-                                            ? theme.theme.colors.primary.purple
-                                            : isDark
-                                            ? theme.theme.colors.primary.gray
-                                            : theme.theme.colors.primary.darkGray,
-                                        borderColor: theme.theme.colors.primary.purple,
-                                    }}
-                                >
-                                    <span>{tab.label}</span>
-                                    <span 
-                                        className="px-2 py-1 rounded-full text-xs"
+                    <div 
+                        className="border-b mb-4"
+                        style={{
+                            borderColor: isDark
+                                ? theme.theme.colors.primary.darkGray
+                                : theme.theme.colors.primary.purpleVeryLight,
+                        }}
+                    >
+                        <nav className="flex space-x-8">
+                            {tabs.map((tab) => {
+                                const Icon = tab.icon;
+                                return (
+                                    <button
+                                        key={tab.key}
+                                        onClick={() => setActiveTab(tab.key)}
+                                        className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                            activeTab === tab.key
+                                                ? 'border-current'
+                                                : 'border-transparent'
+                                        }`}
                                         style={{
-                                            backgroundColor: isActive
-                                                ? theme.theme.colors.primary.purpleVeryLight
-                                                : 'transparent',
-                                            color: isActive
+                                            color: activeTab === tab.key
                                                 ? theme.theme.colors.primary.purple
-                                                : 'inherit',
+                                                : isDark
+                                                    ? theme.theme.colors.primary.lightGray
+                                                    : theme.theme.colors.primary.darkGray,
+                                            borderColor: activeTab === tab.key
+                                                ? theme.theme.colors.primary.purple
+                                                : 'transparent',
                                         }}
                                     >
-                                        {tab.count}
-                                    </span>
-                                </button>
-                            );
-                        })}
+                                        <Icon size={16} />
+                                        {tab.label} ({tab.count})
+                                    </button>
+                                );
+                            })}
+                        </nav>
                     </div>
 
-                    {/* Controls */}
-                    <div className="flex items-center gap-2">
-                        {/* Sort */}
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as 'recent' | 'popular' | 'relevant')}
-                            className="px-3 py-2 border rounded-lg text-sm"
-                            style={{
-                                backgroundColor: isDark
-                                    ? theme.theme.colors.background.dark
-                                    : theme.theme.colors.background.main,
-                                borderColor: isDark
-                                    ? theme.theme.colors.primary.darkGray
-                                    : theme.theme.colors.primary.purpleVeryLight,
-                                color: isDark
-                                    ? theme.theme.colors.primary.white
-                                    : theme.theme.colors.primary.black,
-                            }}
-                        >
-                            <option value="relevant">관련순</option>
-                            <option value="recent">최신순</option>
-                            <option value="popular">인기순</option>
-                        </select>
+                    {/* Filter & View Controls */}
+                    {query && (
+                        <div className="flex items-center justify-between mb-4">
+                            {/* Sort Options */}
+                            <div className="flex gap-2">
+                                {(['relevant', 'recent', 'popular'] as const).map((sort) => (
+                                    <button
+                                        key={sort}
+                                        onClick={() => setSortBy(sort)}
+                                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                            sortBy === sort ? 'active' : ''
+                                        }`}
+                                        style={{
+                                            backgroundColor: sortBy === sort
+                                                ? theme.theme.colors.primary.purple
+                                                : isDark
+                                                    ? theme.theme.colors.primary.darkGray
+                                                    : theme.theme.colors.primary.lightGray,
+                                            color: sortBy === sort
+                                                ? theme.theme.colors.primary.white
+                                                : isDark
+                                                    ? theme.theme.colors.primary.white
+                                                    : theme.theme.colors.primary.black,
+                                        }}
+                                    >
+                                        {sort === 'relevant' && '관련도순'}
+                                        {sort === 'recent' && '최신순'}
+                                        {sort === 'popular' && '인기순'}
+                                    </button>
+                                ))}
+                            </div>
 
-                        {/* View Mode */}
-                        <div className="flex items-center border rounded-lg overflow-hidden"
-                            style={{
-                                borderColor: isDark
-                                    ? theme.theme.colors.primary.darkGray
-                                    : theme.theme.colors.primary.purpleVeryLight,
-                            }}
-                        >
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-2 transition-colors ${
-                                    viewMode === 'grid' ? 'bg-opacity-100' : 'bg-opacity-0'
-                                }`}
-                                style={{
-                                    backgroundColor: viewMode === 'grid'
-                                        ? theme.theme.colors.primary.purpleVeryLight
-                                        : 'transparent',
-                                    color: viewMode === 'grid'
-                                        ? theme.theme.colors.primary.purple
-                                        : isDark
-                                        ? theme.theme.colors.primary.gray
-                                        : theme.theme.colors.primary.darkGray,
-                                }}
-                            >
-                                <Grid size={16} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`p-2 transition-colors ${
-                                    viewMode === 'list' ? 'bg-opacity-100' : 'bg-opacity-0'
-                                }`}
-                                style={{
-                                    backgroundColor: viewMode === 'list'
-                                        ? theme.theme.colors.primary.purpleVeryLight
-                                        : 'transparent',
-                                    color: viewMode === 'list'
-                                        ? theme.theme.colors.primary.purple
-                                        : isDark
-                                        ? theme.theme.colors.primary.gray
-                                        : theme.theme.colors.primary.darkGray,
-                                }}
-                            >
-                                <List size={16} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Search Results */}
-                <div>
-                    {loading ? (
-                        <div className="flex justify-center py-12">
-                            <div className="flex items-center gap-2">
-                                <div
-                                    className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
+                            {/* View Mode */}
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-2 rounded transition-colors ${
+                                        viewMode === 'grid' ? 'active' : ''
+                                    }`}
                                     style={{
-                                        borderColor: theme.theme.colors.primary.purple,
-                                        borderTopColor: "transparent",
-                                    }}
-                                />
-                                <span
-                                    style={{
-                                        color: isDark
+                                        backgroundColor: viewMode === 'grid'
+                                            ? theme.theme.colors.primary.purple
+                                            : 'transparent',
+                                        color: viewMode === 'grid'
                                             ? theme.theme.colors.primary.white
-                                            : theme.theme.colors.primary.black,
+                                            : isDark
+                                                ? theme.theme.colors.primary.lightGray
+                                                : theme.theme.colors.primary.darkGray,
                                     }}
                                 >
-                                    검색 중...
-                                </span>
+                                    <Grid size={16} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-2 rounded transition-colors ${
+                                        viewMode === 'list' ? 'active' : ''
+                                    }`}
+                                    style={{
+                                        backgroundColor: viewMode === 'list'
+                                            ? theme.theme.colors.primary.purple
+                                            : 'transparent',
+                                        color: viewMode === 'list'
+                                            ? theme.theme.colors.primary.white
+                                            : isDark
+                                                ? theme.theme.colors.primary.lightGray
+                                                : theme.theme.colors.primary.darkGray,
+                                    }}
+                                >
+                                    <List size={16} />
+                                </button>
                             </div>
                         </div>
-                    ) : searchResults.length > 0 ? (
-                        <PhotoGrid
-                            photos={searchResults}
-                            onLike={handleLike}
-                            onBookmark={handleBookmark}
-                            onPhotoClick={handlePhotoClick}
-                            hasMore={false}
-                            loading={false}
-                        />
-                    ) : query ? (
-                        <div
-                            className="flex flex-col items-center justify-center py-12 text-center"
-                            style={{
-                                color: isDark
-                                    ? theme.theme.colors.primary.gray
-                                    : theme.theme.colors.primary.darkGray,
-                            }}
-                        >
-                            <div
-                                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                    )}
+                </div>
+
+                {/* Search Content */}
+                <div>
+                    {!query ? (
+                        // 검색어가 없을 때
+                        <div className="text-center py-16">
+                            <Search size={48} className="mx-auto mb-4 opacity-50" />
+                            <p 
+                                className="text-lg font-medium"
                                 style={{
-                                    backgroundColor: theme.theme.colors.primary.purpleVeryLight,
+                                    color: isDark
+                                        ? theme.theme.colors.primary.lightGray
+                                        : theme.theme.colors.primary.darkGray,
                                 }}
                             >
-                                <Search
-                                    size={32}
-                                    style={{ color: theme.theme.colors.primary.purple }}
-                                />
-                            </div>
-                            <h3 className="text-lg font-bold mb-2">검색 결과가 없습니다</h3>
-                            <p className="text-sm mb-4">
-&ldquo;{query}&rdquo;에 대한 검색 결과를 찾을 수 없습니다.
+                                사진이나 사용자를 검색해보세요
                             </p>
-                            <div className="text-sm">
-                                <p>다른 키워드로 검색해보거나</p>
-                                <p>철자를 확인해 주세요.</p>
+                        </div>
+                    ) : loading || photosLoading ? (
+                        // 로딩 상태
+                        <div className="flex justify-center py-16">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2"
+                                style={{ borderColor: theme.theme.colors.primary.purple }}
+                            ></div>
+                        </div>
+                    ) : error || photosError ? (
+                        // 에러 상태
+                        <div className="text-center py-16">
+                            <p className="text-red-500 mb-4">
+                                {error || photosError || '검색 중 오류가 발생했습니다'}
+                            </p>
+                            <button 
+                                onClick={performSearch}
+                                className="px-4 py-2 rounded"
+                                style={{ 
+                                    backgroundColor: theme.theme.colors.primary.purple,
+                                    color: theme.theme.colors.primary.white
+                                }}
+                            >
+                                다시 시도
+                            </button>
+                        </div>
+                    ) : activeTab === 'photos' ? (
+                        // 사진 검색 결과
+                        searchResults.length > 0 ? (
+                            <PhotoGrid photos={searchResults} />
+                        ) : (
+                            <div className="text-center py-16">
+                                <Camera size={48} className="mx-auto mb-4 opacity-50" />
+                                <p 
+                                    className="text-lg font-medium"
+                                    style={{
+                                        color: isDark
+                                            ? theme.theme.colors.primary.lightGray
+                                            : theme.theme.colors.primary.darkGray,
+                                    }}
+                                >
+                                    &quot;{query}&quot;와 관련된 사진을 찾을 수 없습니다
+                                </p>
                             </div>
+                        )
+                    ) : activeTab === 'users' ? (
+                        // 사용자 검색 결과 (미구현)
+                        <div className="text-center py-16">
+                            <User size={48} className="mx-auto mb-4 opacity-50" />
+                            <p 
+                                className="text-lg font-medium"
+                                style={{
+                                    color: isDark
+                                        ? theme.theme.colors.primary.lightGray
+                                        : theme.theme.colors.primary.darkGray,
+                                }}
+                            >
+                                사용자 검색 기능은 준비 중입니다
+                            </p>
                         </div>
                     ) : (
-                        <div
-                            className="flex flex-col items-center justify-center py-12 text-center"
-                            style={{
-                                color: isDark
-                                    ? theme.theme.colors.primary.gray
-                                    : theme.theme.colors.primary.darkGray,
-                            }}
-                        >
-                            <h3 className="text-lg font-bold mb-2">검색어를 입력해주세요</h3>
-                            <p className="text-sm">
-                                사진, 사용자, 태그를 검색할 수 있습니다.
-                            </p>
-                        </div>
+                        // 전체 검색 결과
+                        searchResults.length > 0 ? (
+                            <PhotoGrid photos={searchResults} />
+                        ) : (
+                            <div className="text-center py-16">
+                                <Search size={48} className="mx-auto mb-4 opacity-50" />
+                                <p 
+                                    className="text-lg font-medium"
+                                    style={{
+                                        color: isDark
+                                            ? theme.theme.colors.primary.lightGray
+                                            : theme.theme.colors.primary.darkGray,
+                                    }}
+                                >
+                                    &quot;{query}&quot;와 관련된 결과를 찾을 수 없습니다
+                                </p>
+                            </div>
+                        )
                     )}
                 </div>
             </div>
@@ -389,45 +329,16 @@ function SearchContent() {
     );
 }
 
-// 로딩 컴포넌트
-function SearchLoading() {
-    const { theme, isDark } = useThemeContext();
-    
-    return (
-        <div 
-            className="min-h-screen flex items-center justify-center"
-            style={{
-                backgroundColor: isDark
-                    ? theme.theme.colors.background.dark
-                    : theme.theme.colors.background.main,
-            }}
-        >
-            <div className="flex items-center gap-2">
-                <div
-                    className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
-                    style={{
-                        borderColor: theme.theme.colors.primary.purple,
-                        borderTopColor: "transparent",
-                    }}
-                />
-                <span
-                    style={{
-                        color: isDark
-                            ? theme.theme.colors.primary.white
-                            : theme.theme.colors.primary.black,
-                    }}
-                >
-                    검색 페이지를 불러오는 중...
-                </span>
-            </div>
-        </div>
-    );
-}
-
-// 메인 컴포넌트 (Suspense 경계 제공)
+// 메인 컴포넌트 (Suspense 래퍼)
 export default function SearchPage() {
     return (
-        <Suspense fallback={<SearchLoading />}>
+        <Suspense 
+            fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                </div>
+            }
+        >
             <SearchContent />
         </Suspense>
     );

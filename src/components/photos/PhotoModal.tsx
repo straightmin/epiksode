@@ -1,38 +1,37 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
+import PhotoImage from "../images/PhotoImage";
+import Image from "next/image";
 import {
     X,
     Heart,
-    Bookmark,
     Share2,
     Download,
     ChevronLeft,
     ChevronRight,
     MessageCircle,
     Send,
-    Star,
     MoreHorizontal,
     Flag,
     Eye,
 } from "lucide-react";
-import { PhotoData, Comment } from "@/types";
+import { PhotoDetail, CommentDetail, createID } from "@/types";
 
 interface PhotoModalProps {
-    photo: PhotoData;
+    photo: PhotoDetail;
     isOpen: boolean;
     onClose: () => void;
     onNext?: () => void;
     onPrevious?: () => void;
     hasNext?: boolean;
     hasPrevious?: boolean;
-    onLike?: (photoId: string) => void;
-    onBookmark?: (photoId: string) => void;
-    onFollow?: (userId: string) => void;
+    onLike?: (photoId: number) => void;
+    onFollow?: (userId: number) => void;
 }
 
-const PhotoModal: React.FC<PhotoModalProps> = ({
+const PhotoModal: React.FC<PhotoModalProps> = memo(({
     photo,
     isOpen,
     onClose,
@@ -41,45 +40,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     hasNext = false,
     hasPrevious = false,
     onLike,
-    onBookmark,
-    onFollow,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onFollow: _onFollow,
 }) => {
     const { theme, isDark } = useThemeContext();
     const [activeTab, setActiveTab] = useState<'comments' | 'info'>('comments');
     const [newComment, setNewComment] = useState("");
-    const [replyingTo, setReplyingTo] = useState<string | null>(null);
-    const [comments, setComments] = useState<Comment[]>([
-        {
-            id: "1",
-            user: { name: "김자연", username: "nature_kim", avatar: "" },
-            content: "정말 아름다운 사진이네요! 어느 장소인가요?",
-            createdAt: "2024-08-10T10:30:00Z",
-            likes: 5,
-            isLiked: false,
-            replies: [
-                {
-                    id: "1-1",
-                    user: { name: "현재 사용자", username: "current_user", avatar: "" },
-                    content: "지리산 국립공원입니다! 새벽 5시경에 찍었어요.",
-                    createdAt: "2024-08-10T10:45:00Z",
-                    likes: 2,
-                    isLiked: false,
-                    isReply: true,
-                    parentId: "1",
-                },
-            ],
-        },
-        {
-            id: "2",
-            user: { name: "박사진", username: "photo_park", avatar: "" },
-            content: "빛의 표현이 예술적입니다 👏",
-            createdAt: "2024-08-10T11:15:00Z",
-            likes: 3,
-            isLiked: true,
-            replies: [],
-        },
+    const [replyingTo, setReplyingTo] = useState<number | null>(null);
+    const [comments, setComments] = useState<CommentDetail[]>([
     ]);
-    const [isImageLoading, setIsImageLoading] = useState(true);
 
     // 키보드 네비게이션
     useEffect(() => {
@@ -108,16 +77,13 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     break;
                 case 'b':
                 case 'B':
-                    if (onBookmark) {
-                        onBookmark(photo.id);
-                    }
                     break;
             }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [isOpen, hasNext, hasPrevious, onNext, onPrevious, onClose, onLike, onBookmark, photo.id]);
+    }, [isOpen, hasNext, hasPrevious, onNext, onPrevious, onClose, onLike, photo.id]);
 
     // 모달 오픈 시 스크롤 방지
     useEffect(() => {
@@ -137,19 +103,28 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
 
         if (replyingTo) {
             // 답글 추가
-            const reply: Comment = {
-                id: `reply-${replyingTo}-${comments.length}-${Math.random().toString(36).substring(7)}`,
-                user: {
-                    name: "현재 사용자",
-                    username: "current_user",
-                    avatar: "",
-                },
+            const reply: CommentDetail = {
+                id: Math.floor(Math.random() * 10000),
+                userId: 1,
                 content: newComment,
-                createdAt: new Date().toISOString(),
-                likes: 0,
-                isLiked: false,
-                isReply: true,
+                photoId: photo.id,
+                seriesId: null,
                 parentId: replyingTo,
+                deletedAt: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                author: {
+                    id: createID(1),
+                    username: "current_user",
+                    bio: null,
+                    profileImageUrl: null,
+                    createdAt: new Date().toISOString(),
+                },
+                likesCount: 0,
+                repliesCount: 0,
+                replies: [],
+                isLikedByCurrentUser: false,
+                isOwner: true,
             };
 
             setComments(prev =>
@@ -165,28 +140,38 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             setReplyingTo(null);
         } else {
             // 새 댓글 추가
-            const comment: Comment = {
-                id: `comment-${comments.length}-${Math.random().toString(36).substring(7)}`,
-                user: {
-                    name: "현재 사용자",
-                    username: "current_user",
-                    avatar: "",
-                },
+            const comment: CommentDetail = {
+                id: Math.floor(Math.random() * 10000),
+                userId: 1,
                 content: newComment,
+                photoId: photo.id,
+                seriesId: null,
+                parentId: null,
+                deletedAt: null,
                 createdAt: new Date().toISOString(),
-                likes: 0,
-                isLiked: false,
+                updatedAt: new Date().toISOString(),
+                author: {
+                    id: createID(1),
+                    username: "current_user",
+                    bio: null,
+                    profileImageUrl: null,
+                    createdAt: new Date().toISOString(),
+                },
+                likesCount: 0,
+                repliesCount: 0,
                 replies: [],
+                isLikedByCurrentUser: false,
+                isOwner: true,
             };
 
             setComments(prev => [comment, ...prev]);
         }
         
         setNewComment("");
-    }, [newComment, replyingTo]);
+    }, [newComment, replyingTo, photo.id]);
 
     // 댓글 좋아요 핸들러
-    const handleCommentLike = useCallback((commentId: string, isReply: boolean = false, parentId?: string) => {
+    const handleCommentLike = useCallback((commentId: number, isReply: boolean = false, parentId?: number) => {
         if (isReply && parentId) {
             // 답글 좋아요
             setComments(prev =>
@@ -198,8 +183,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 reply.id === commentId
                                     ? {
                                         ...reply,
-                                        isLiked: !reply.isLiked,
-                                        likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1,
+                                        isLikedByCurrentUser: !reply.isLikedByCurrentUser,
+                                        likesCount: reply.isLikedByCurrentUser ? reply.likesCount - 1 : reply.likesCount + 1,
                                     }
                                     : reply
                             ),
@@ -214,8 +199,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     comment.id === commentId
                         ? {
                             ...comment,
-                            isLiked: !comment.isLiked,
-                            likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+                            isLikedByCurrentUser: !comment.isLikedByCurrentUser,
+                            likesCount: comment.isLikedByCurrentUser ? comment.likesCount - 1 : comment.likesCount + 1,
                         }
                         : comment
                 )
@@ -224,7 +209,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
     }, []);
 
     // 답글 작성 시작
-    const handleStartReply = useCallback((commentId: string) => {
+    const handleStartReply = useCallback((commentId: number) => {
         setReplyingTo(commentId);
         setNewComment("");
     }, []);
@@ -293,61 +278,26 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             <div className="w-full h-full max-w-7xl mx-auto grid lg:grid-cols-3 gap-0">
                 {/* Image Section */}
                 <div className="lg:col-span-2 relative flex items-center justify-center bg-black">
-                    {isImageLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div
-                                className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
-                                style={{
-                                    borderColor: theme.theme.colors.primary.white,
-                                    borderTopColor: "transparent",
-                                }}
-                            />
-                        </div>
-                    )}
-                    
-                    <img
+                    <PhotoImage
+                        photoId={photo.id}
                         src={photo.imageUrl}
                         alt={photo.title}
-                        className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
-                            isImageLoading ? 'opacity-0' : 'opacity-100'
-                        }`}
-                        onLoad={() => setIsImageLoading(false)}
-                        onError={() => setIsImageLoading(false)}
+                        fill
+                        objectFit="contain"
+                        priority
+                        showPlaceholder
+                        onError={(error: Error) => {
+                            console.error('PhotoModal: 이미지 로딩 실패', error);
+                        }}
                     />
 
-                    {/* Epic Moment Badge */}
-                    {photo.isEpicMoment && (
-                        <div
-                            className="absolute top-4 left-4 px-3 py-1 rounded-full flex items-center gap-1 text-sm font-bold"
-                            style={{
-                                backgroundColor: theme.theme.colors.accent.pink,
-                                color: theme.theme.colors.primary.white,
-                            }}
-                        >
-                            <Star size={14} fill="currentColor" />
-                            에픽소드
-                        </div>
-                    )}
 
                     {/* Image Actions Overlay */}
                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <span className="text-white text-sm flex items-center gap-1">
-                                <Eye size={16} />
-                                {photo.views.toLocaleString()}
-                            </span>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => onBookmark?.(photo.id)}
-                                className="p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
-                            >
-                                <Bookmark
-                                    size={20}
-                                    fill={photo.isBookmarked ? "currentColor" : "none"}
-                                />
-                            </button>
                             
                             <button
                                 onClick={() => onLike?.(photo.id)}
@@ -355,8 +305,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                             >
                                 <Heart
                                     size={20}
-                                    fill={photo.isLiked ? "currentColor" : "none"}
-                                    className={photo.isLiked ? "text-red-500" : ""}
+                                    fill={photo.isLikedByCurrentUser ? "currentColor" : "none"}
+                                    className={photo.isLikedByCurrentUser ? "text-red-500" : ""}
                                 />
                             </button>
                             
@@ -390,10 +340,12 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     >
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                                {photo.photographer.avatar ? (
-                                    <img
-                                        src={photo.photographer.avatar}
-                                        alt={photo.photographer.name}
+                                {photo.author.profileImageUrl ? (
+                                    <Image
+                                        src={photo.author.profileImageUrl}
+                                        alt={photo.author.username}
+                                        width={48}
+                                        height={48}
                                         className="w-12 h-12 rounded-full object-cover"
                                     />
                                 ) : (
@@ -404,7 +356,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                             color: theme.theme.colors.primary.white,
                                         }}
                                     >
-                                        {photo.photographer.name.charAt(0).toUpperCase()}
+                                        {photo.author.username.charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 
@@ -417,7 +369,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                 : theme.theme.colors.primary.black,
                                         }}
                                     >
-                                        {photo.photographer.name}
+                                        {photo.author.username}
                                     </h3>
                                     <p
                                         className="text-sm"
@@ -427,27 +379,24 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                 : theme.theme.colors.primary.darkGray,
                                         }}
                                     >
-                                        @{photo.photographer.username}
+                                        @{photo.author.username}
                                     </p>
                                 </div>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => onFollow?.(photo.photographer.id)}
+                                {/* 팔로우 버튼 - 백엔드 API 확장 필요 */}
+                                {/* <button
+                                    onClick={() => onFollow?.(photo.author.id)}
                                     className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
                                     style={{
-                                        backgroundColor: photo.photographer.isFollowing
-                                            ? 'transparent'
-                                            : theme.theme.colors.primary.purple,
-                                        color: photo.photographer.isFollowing
-                                            ? theme.theme.colors.primary.purple
-                                            : theme.theme.colors.primary.white,
+                                        backgroundColor: theme.theme.colors.primary.purple,
+                                        color: theme.theme.colors.primary.white,
                                         border: `1px solid ${theme.theme.colors.primary.purple}`,
                                     }}
                                 >
-                                    {photo.photographer.isFollowing ? '팔로잉' : '팔로우'}
-                                </button>
+                                    팔로우
+                                </button> */}
                                 
                                 <button
                                     className="p-2 rounded-full transition-colors"
@@ -490,15 +439,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                             <span
                                 className="flex items-center gap-1"
                                 style={{
-                                    color: photo.isLiked
+                                    color: photo.isLikedByCurrentUser
                                         ? theme.theme.colors.accent.pink
                                         : isDark
                                         ? theme.theme.colors.primary.gray
                                         : theme.theme.colors.primary.darkGray,
                                 }}
                             >
-                                <Heart size={14} fill={photo.isLiked ? "currentColor" : "none"} />
-                                {photo.likes.toLocaleString()}
+                                <Heart size={14} fill={photo.isLikedByCurrentUser ? "currentColor" : "none"} />
+                                {photo.likesCount.toLocaleString()}
                             </span>
                             
                             <span
@@ -510,7 +459,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 }}
                             >
                                 <MessageCircle size={14} />
-                                {photo.comments}
+                                {photo.commentsCount}
                             </span>
                             
                             <span
@@ -522,7 +471,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                 }}
                             >
                                 <Eye size={14} />
-                                {photo.views.toLocaleString()}
+                                {photo.viewCount}
                             </span>
                         </div>
 
@@ -585,10 +534,12 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                         <div key={comment.id} className="space-y-3">
                                             {/* Main Comment */}
                                             <div className="flex items-start gap-3">
-                                                {comment.user.avatar ? (
-                                                    <img
-                                                        src={comment.user.avatar}
-                                                        alt={comment.user.name}
+                                                {comment.author.profileImageUrl ? (
+                                                    <Image
+                                                        src={comment.author.profileImageUrl}
+                                                        alt={comment.author.username}
+                                                        width={32}
+                                                        height={32}
                                                         className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                                                     />
                                                 ) : (
@@ -599,7 +550,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                             color: theme.theme.colors.primary.purple,
                                                         }}
                                                     >
-                                                        {comment.user.name.charAt(0).toUpperCase()}
+                                                        {comment.author.username.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                                 
@@ -613,7 +564,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                     : theme.theme.colors.primary.black,
                                                             }}
                                                         >
-                                                            {comment.user.name}
+                                                            {comment.author.username}
                                                         </span>
                                                         <span
                                                             className="text-xs"
@@ -643,15 +594,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                             onClick={() => handleCommentLike(comment.id)}
                                                             className="flex items-center gap-1 text-xs transition-colors hover:scale-105"
                                                             style={{
-                                                                color: comment.isLiked
+                                                                color: comment.isLikedByCurrentUser
                                                                     ? theme.theme.colors.accent.pink
                                                                     : isDark
                                                                     ? theme.theme.colors.primary.gray
                                                                     : theme.theme.colors.primary.darkGray,
                                                             }}
                                                         >
-                                                            <Heart size={12} fill={comment.isLiked ? "currentColor" : "none"} />
-                                                            {comment.likes > 0 && comment.likes}
+                                                            <Heart size={12} fill={comment.isLikedByCurrentUser ? "currentColor" : "none"} />
+                                                            {comment.likesCount > 0 && comment.likesCount}
                                                         </button>
                                                         
                                                         <button
@@ -676,10 +627,12 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                 <div className="ml-11 space-y-3">
                                                     {comment.replies.map((reply) => (
                                                         <div key={reply.id} className="flex items-start gap-3">
-                                                            {reply.user.avatar ? (
-                                                                <img
-                                                                    src={reply.user.avatar}
-                                                                    alt={reply.user.name}
+                                                            {reply.author.profileImageUrl ? (
+                                                                <Image
+                                                                    src={reply.author.profileImageUrl}
+                                                                    alt={reply.author.username}
+                                                                    width={24}
+                                                                    height={24}
                                                                     className="w-6 h-6 rounded-full object-cover flex-shrink-0"
                                                                 />
                                                             ) : (
@@ -690,7 +643,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                         color: theme.theme.colors.primary.purple,
                                                                     }}
                                                                 >
-                                                                    {reply.user.name.charAt(0).toUpperCase()}
+                                                                    {reply.author.username.charAt(0).toUpperCase()}
                                                                 </div>
                                                             )}
                                                             
@@ -704,7 +657,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                                 : theme.theme.colors.primary.black,
                                                                         }}
                                                                     >
-                                                                        {reply.user.name}
+                                                                        {reply.author.username}
                                                                     </span>
                                                                     <span
                                                                         className="text-xs"
@@ -733,15 +686,15 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                                                                     onClick={() => handleCommentLike(reply.id, true, comment.id)}
                                                                     className="flex items-center gap-1 text-xs transition-colors hover:scale-105"
                                                                     style={{
-                                                                        color: reply.isLiked
+                                                                        color: reply.isLikedByCurrentUser
                                                                             ? theme.theme.colors.accent.pink
                                                                             : isDark
                                                                             ? theme.theme.colors.primary.gray
                                                                             : theme.theme.colors.primary.darkGray,
                                                                     }}
                                                                 >
-                                                                    <Heart size={10} fill={reply.isLiked ? "currentColor" : "none"} />
-                                                                    {reply.likes > 0 && reply.likes}
+                                                                    <Heart size={10} fill={reply.isLikedByCurrentUser ? "currentColor" : "none"} />
+                                                                    {reply.likesCount > 0 && reply.likesCount}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -837,134 +790,6 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
 
                         {activeTab === 'info' && (
                             <div className="p-4 space-y-4 overflow-y-auto h-full">
-                                {/* Camera Info */}
-                                {photo.camera && (
-                                    <div>
-                                        <h4
-                                            className="font-medium mb-2"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.white
-                                                    : theme.theme.colors.primary.black,
-                                            }}
-                                        >
-                                            카메라 정보
-                                        </h4>
-                                        <div className="space-y-1 text-sm">
-                                            {typeof photo.camera === 'object' && photo.camera.make && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>카메라</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).make} {(photo.camera as any).model}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.lens && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>렌즈</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).lens}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.aperture && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>조리개</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.aperture}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.shutterSpeed && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>셔터스피드</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.shutterSpeed}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.iso && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>ISO</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.iso}</span>
-                                                </div>
-                                            )}
-                                            {typeof photo.camera === 'object' && photo.camera.settings?.focalLength && (
-                                                <div
-                                                    className="flex justify-between"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    <span>초점거리</span>
-                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                    <span>{(photo.camera as any).settings.focalLength}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-
-                                {/* Location */}
-                                {photo.location && (
-                                    <div>
-                                        <h4
-                                            className="font-medium mb-2"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.white
-                                                    : theme.theme.colors.primary.black,
-                                            }}
-                                        >
-                                            촬영 장소
-                                        </h4>
-                                        <p
-                                            className="text-sm"
-                                            style={{
-                                                color: isDark
-                                                    ? theme.theme.colors.primary.gray
-                                                    : theme.theme.colors.primary.darkGray,
-                                            }}
-                                        >
-                                            {photo.location}
-                                        </p>
-                                    </div>
-                                )}
 
                                 {/* Report Button */}
                                 <button
@@ -980,6 +805,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
             </div>
         </div>
     );
-};
+});
+
+PhotoModal.displayName = 'PhotoModal';
 
 export default PhotoModal;

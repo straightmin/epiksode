@@ -7,12 +7,6 @@ import { useThemeContext } from "../../../frontend-theme-system/components/Theme
 import {
     Home,
     Search,
-    TrendingUp,
-    Camera,
-    BookOpen,
-    Heart,
-    Bookmark,
-    Bell,
     Upload,
     Settings,
     Menu,
@@ -39,7 +33,7 @@ const Sidebar: React.FC = () => {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // MVP용 간소화된 네비게이션 메뉴
+    // MVP용 실제 구현된 네비게이션 메뉴
     const navigationSections: NavigationSection[] = [
         {
             title: "메인",
@@ -50,50 +44,19 @@ const Sidebar: React.FC = () => {
                     icon: Home,
                 },
                 {
-                    name: "탐색",
-                    href: "/explore",
+                    name: "검색",
+                    href: "/search",
                     icon: Search,
                 },
-                {
-                    name: "트렌딩",
-                    href: "/trending",
-                    icon: TrendingUp,
-                },
             ],
         },
         {
-            title: "콘텐츠",
+            title: "만들기",
             items: [
                 {
-                    name: "사진",
-                    href: "/photos",
-                    icon: Camera,
-                },
-                {
-                    name: "시리즈",
-                    href: "/series",
-                    icon: BookOpen,
-                },
-            ],
-        },
-        {
-            title: "나의 활동",
-            items: [
-                {
-                    name: "좋아요",
-                    href: "/liked",
-                    icon: Heart,
-                },
-                {
-                    name: "북마크",
-                    href: "/bookmarks",
-                    icon: Bookmark,
-                },
-                {
-                    name: "알림",
-                    href: "/notifications",
-                    icon: Bell,
-                    badge: 3,
+                    name: "업로드",
+                    href: "/upload",
+                    icon: Upload,
                 },
             ],
         },
@@ -329,9 +292,8 @@ const Sidebar: React.FC = () => {
                 <div className="flex justify-around items-center">
                     {[
                         { name: "홈", href: "/", icon: Home },
-                        { name: "탐색", href: "/explore", icon: Search },
+                        { name: "검색", href: "/search", icon: Search },
                         { name: "업로드", href: "/upload", icon: Upload },
-                        { name: "알림", href: "/notifications", icon: Bell },
                         { name: "프로필", href: "/profile", icon: Settings },
                     ].map((item) => {
                         const isActive = isActiveLink(item.href);

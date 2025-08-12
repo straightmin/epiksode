@@ -1,0 +1,64 @@
+{
+  "success": true,
+  "message": "사진 목록을 성공적으로 조회했습니다.",
+  "data": {
+    "data": [
+      {
+        "id": 1,
+        "userId": 1,
+        "title": "산속의 아침",
+        "description": "지리산 국립공원의 수력 폭포에서 바라본 산속의 아름다운 아침 풍경입니다.",
+        "imageUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=1200&fit=crop",
+        "thumbnailUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",
+        "viewCount": 1247,
+        "isPublic": true,
+        "createdAt": "2024-02-15T06:30:00.000Z",
+        "updatedAt": "2024-02-15T06:30:00.000Z",
+        "deletedAt": null,
+        "author": {
+          "id": 1,
+          "username": "nature_kim",
+          "bio": "자연의 아름다움을 담는 사진가입니다. 산과 숲, 강과 바다의 순간을 기록합니다.",
+          "profileImageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+          "createdAt": "2024-01-15T09:30:00.000Z"
+        },
+        "likesCount": 42,
+        "commentsCount": 8,
+        "isLikedByCurrentUser": false,
+        "isOwner": false
+      },
+      {
+        "id": 17,
+        "userId": 5,
+        "title": "사막의 별",
+        "description": "사하라 사막에서 바라본 은하수와 별들의 화려한 화상입니다.",
+        "imageUrl": "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&h=1100&fit=crop",
+        "thumbnailUrl": "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=300&h=300&fit=crop",
+        "viewCount": 2156,
+        "isPublic": true,
+        "createdAt": "2024-03-20T22:45:00.000Z",
+        "updatedAt": "2024-03-20T22:45:00.000Z",
+        "deletedAt": null,
+        "author": {
+          "id": 5,
+          "username": "star_jung",
+          "bio": "밤하늘의 아름다움을 찾아다니는 여행자입니다. 달과 별, 그리고 우주를 사랑합니다.",
+          "profileImageUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+          "createdAt": "2024-01-20T14:20:00.000Z"
+        },
+        "likesCount": 89,
+        "commentsCount": 23,
+        "isLikedByCurrentUser": true,
+        "isOwner": false
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 20,
+      "totalPages": 2,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}

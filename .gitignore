@@ -41,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 # CLAUDE
+/.claude
 /claude
 CLAUDE.md
 
@@ -48,8 +49,16 @@ CLAUDE.md
 /gemini
 GEMINI.md
 
-# documentation
-/docs
+# documentation (현재 중요한 문서들이 있어 추적함)
+# /docs
 
 # frontend theme guidelines
 /frontend-theme-system
+
+# backup
+*.backup
+
+# log files
+*.log
+*.err
+*.error
