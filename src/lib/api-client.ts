@@ -19,7 +19,9 @@ import {
     CreateCommentRequest,
     CommentDetail,
     User,
-    UpdateProfileRequest
+    UpdateProfileRequest,
+    SearchParams,
+    SearchResponse
 } from '@/types';
 
 // Import enhanced API response types (PR #3 Fix)
@@ -792,6 +794,15 @@ export class ApiClient {
                 { originalError: error instanceof Error ? error.message : String(error) }
             );
         }
+    }
+
+    // =============================================================================
+    // 🔍 검색 API
+    // =============================================================================
+
+    /** 통합 검색 */
+    async search(params: SearchParams): Promise<SearchResponse> {
+        return this.get<SearchResponse>('/search', params as unknown as Record<string, unknown>);
     }
 
     // =============================================================================

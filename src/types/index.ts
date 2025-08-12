@@ -548,6 +548,32 @@ export const SUPPORTED_IMAGE_TYPES = [
 /** 최대 파일 크기 (10MB) */
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+// =============================================================================
+// 🔍 검색 관련 타입
+// =============================================================================
+
+/** 검색 쿼리 파라미터 */
+export interface SearchParams {
+    q: string; // 검색어
+    type?: 'photos' | 'users' | 'series'; // 기본값: 전체
+    sortBy?: 'relevance' | 'latest' | 'popular'; // 기본값: relevance
+    page?: number;
+    limit?: number;
+}
+
+/** 통합 검색 응답 */
+export interface SearchResponse {
+    photos: PaginatedResponse<PhotoDetail>;
+    users: PaginatedResponse<PublicUser>;
+    series: PaginatedResponse<SeriesDetail>;
+}
+
+
+
+// =============================================================================
+// 🚫 에러 관련 타입
+// =============================================================================
+
 /** API 에러 코드 */
 export const API_ERROR_CODES = {
   // 인증 관련
