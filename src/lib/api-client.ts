@@ -22,6 +22,15 @@ import {
     UpdateProfileRequest
 } from '@/types';
 
+// Import enhanced API response types (PR #3 Fix)
+import {
+    CommentApiResponse,
+    CommentCreateResponse,
+    extractResponseData,
+    extractPaginatedData,
+    extractCommentList
+} from '@/types/api';
+
 // =============================================================================
 // 🔧 API 클라이언트 설정
 // =============================================================================
@@ -679,35 +688,110 @@ export class ApiClient {
     // 💬 댓글 API
     // =============================================================================
 
-    /** 댓글 목록 조회 */
+    /** 댓글 목록 조회 - Enhanced with PR #3 fix */
     async getComments(photoId: number, params?: {
         page?: number;
         limit?: number;
     }): Promise<CommentListResponse> {
-        return this.get<CommentListResponse>(`/photos/${photoId}/comments`, params);
-    }
-
-    /** 댓글 작성 */
-    async createComment(commentData: CreateCommentRequest): Promise<CommentDetail> {
-        // 백엔드 스펙에 맞는 경로 사용
-        if (commentData.photoId) {
-            return this.post<CommentDetail>(`/photos/${commentData.photoId}/comments`, {
-                content: commentData.content,
-                parentId: commentData.parentId
-            });
-        } else if (commentData.seriesId) {
-            return this.post<CommentDetail>(`/series/${commentData.seriesId}/comments`, {
-                content: commentData.content,
-                parentId: commentData.parentId
-            });
-        } else {
-            throw new ApiClientError('INVALID_COMMENT_DATA', 400, 'photoId 또는 seriesId가 필요합니다.');
+        try {
+            const response = await this.get<CommentApiResponse>(`/photos/${photoId}/comments`, params);
+            
+            // ✅ PR #3 Fix: Extract data from response.data.data instead of response.comments
+            const paginatedData = extractPaginatedData<CommentDetail>(response);
+            
+            return {
+                data: paginatedData.data,
+                pagination: paginatedData.pagination
+            };
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+            
+            // Return empty result with proper error handling
+            return {
+                data: [],
+                pagination: {
+                    page: params?.page || 1,
+                    limit: params?.limit || 20,
+                    total: 0,
+                    totalPages: 0,
+                    hasNext: false,
+                    hasPrev: false
+                }
+            };
         }
     }
 
-    /** 댓글 삭제 */
+    /** 댓글 작성 - Enhanced with PR #3 fix and error handling */
+    async createComment(commentData: CreateCommentRequest): Promise<CommentDetail> {
+        try {
+            let response: CommentCreateResponse;
+            
+            // Backend spec-compliant route usage
+            if (commentData.photoId) {
+                response = await this.post<CommentCreateResponse>(`/photos/${commentData.photoId}/comments`, {
+                    content: commentData.content,
+                    parentId: commentData.parentId
+                });
+            } else if (commentData.seriesId) {
+                response = await this.post<CommentCreateResponse>(`/series/${commentData.seriesId}/comments`, {
+                    content: commentData.content,
+                    parentId: commentData.parentId
+                });
+            } else {
+                throw new ApiClientError('INVALID_COMMENT_DATA', 400, 'photoId 또는 seriesId가 필요합니다.');
+            }
+            
+            // ✅ Extract comment data with proper error handling
+            return extractResponseData<CommentDetail>(response);
+        } catch (error) {
+            console.error('Error creating comment:', error);
+            
+            // Re-throw with enhanced error information
+            if (error instanceof ApiClientError) {
+                throw error;
+            }
+            
+            throw new ApiClientError(
+                'COMMENT_CREATE_FAILED',
+                500,
+                '댓글 작성에 실패했습니다. 다시 시도해주세요.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
+        }
+    }
+
+    /** 댓글 삭제 - Enhanced with error handling and rollback support */
     async deleteComment(commentId: number): Promise<void> {
-        return this.delete<void>(`/comments/${commentId}`);
+        try {
+            await this.delete<void>(`/comments/${commentId}`);
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            
+            // Enhanced error handling for different scenarios
+            if (error instanceof ApiClientError) {
+                if (error.statusCode === 404) {
+                    throw new ApiClientError(
+                        'COMMENT_NOT_FOUND',
+                        404,
+                        '삭제하려는 댓글을 찾을 수 없습니다.'
+                    );
+                } else if (error.statusCode === 403) {
+                    throw new ApiClientError(
+                        'COMMENT_DELETE_FORBIDDEN',
+                        403,
+                        '이 댓글을 삭제할 권한이 없습니다.'
+                    );
+                }
+                throw error;
+            }
+            
+            throw new ApiClientError(
+                'COMMENT_DELETE_FAILED',
+                500,
+                '댓글 삭제에 실패했습니다. 다시 시도해주세요.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
+        }
     }
 
     // =============================================================================

@@ -15,8 +15,8 @@
 export type ID = number & { readonly __brand: unique symbol };
 
 /** 
- * ID 생성 함수 - 양수 정수만 허용
- * @throws {Error} 양수 정수가 아닌 경우 에러 발생
+ * ID creation function - only allows positive integers
+ * @throws {Error} Error thrown when not a positive integer
  */
 export function createID(value: number): ID {
     if (!Number.isInteger(value) || value <= 0) {
@@ -26,8 +26,8 @@ export function createID(value: number): ID {
 }
 
 /**
- * 문자열을 ID로 파싱
- * @throws {Error} 유효하지 않은 ID 문자열인 경우 에러 발생
+ * Parse string to ID
+ * @throws {Error} Error thrown when invalid ID string
  */
 export function parseID(value: string): ID {
     const parsed = parseInt(value, 10);
@@ -38,7 +38,7 @@ export function parseID(value: string): ID {
 }
 
 /**
- * 안전한 ID 파싱 (에러 대신 null 반환)
+ * Safe ID parsing (returns null instead of throwing error)
  */
 export function safeParseID(value: string | number | null | undefined): ID | null {
     if (value === null || value === undefined) {
