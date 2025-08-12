@@ -19,7 +19,9 @@ import {
     CreateCommentRequest,
     CommentDetail,
     User,
-    UpdateProfileRequest
+    UpdateProfileRequest,
+    SearchParams,
+    SearchResponse
 } from '@/types';
 
 // =============================================================================
@@ -708,6 +710,15 @@ export class ApiClient {
     /** 댓글 삭제 */
     async deleteComment(commentId: number): Promise<void> {
         return this.delete<void>(`/comments/${commentId}`);
+    }
+
+    // =============================================================================
+    // 🔍 검색 API
+    // =============================================================================
+
+    /** 통합 검색 */
+    async search(params: SearchParams): Promise<SearchResponse> {
+        return this.get<SearchResponse>('/search', params as unknown as Record<string, unknown>);
     }
 
     // =============================================================================
