@@ -569,16 +569,6 @@ export interface SearchResponse {
 }
 
 
-/** 시리즈 상세 정보 */
-export interface SeriesDetail {
-    id: number;
-    title: string;
-    description: string | null;
-    coverImageUrl: string | null;
-    photosCount: number;
-    createdAt: string;
-    author: PublicUser;
-}
 
 // =============================================================================
 // 🚫 에러 관련 타입

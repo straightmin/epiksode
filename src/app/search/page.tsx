@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import PhotoGrid from "../../components/photos/PhotoGrid";
 import { Search, Grid, List, Camera, User } from "lucide-react";
 import { PhotoDetail, PublicUser, SearchParams } from "@/types";
 import { apiClient, getErrorMessage } from '@/lib/api-client';
+import UserCard from '../../components/common/UserCard';
 
 // 검색 파라미터를 사용하는 내부 컴포넌트
 function SearchContent() {
@@ -25,27 +26,35 @@ function SearchContent() {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
     const [activeTab, setActiveTab] = useState<'all' | 'photos' | 'users'>('photos');
     const [sortBy, setSortBy] = useState<'relevance' | 'latest' | 'popular'>('relevance');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    // 디바운싱을 위한 타이머 ID 저장
-    const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+    // 디바운싱을 위한 타이머 ref 사용 (무한 루프 방지)
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // 검색 실행
-    const performSearch = useCallback(async (searchQuery: string, sortOrder: 'relevance' | 'latest' | 'popular') => {
+    const performSearch = useCallback(async (searchQuery: string, sortOrder: 'relevance' | 'latest' | 'popular', isRetry = false) => {
         if (!searchQuery.trim()) {
             setSearchResults({
                 photos: [],
                 users: [],
                 total: { photos: 0, users: 0 }
             });
+            setError(null);
             return;
         }
 
         try {
             setLoading(true);
             setError(null);
+            
+            if (isRetry) {
+                setRetryCount(prev => prev + 1);
+            } else {
+                setRetryCount(0);
+            }
 
             // 백엔드 검색 API 호출
             const searchParams: SearchParams = {
@@ -57,17 +66,26 @@ function SearchContent() {
 
             const response = await apiClient.search(searchParams);
 
+            // API 응답 유효성 검증
+            if (!response || !response.photos || !response.users) {
+                throw new Error('검색 응답이 올바르지 않습니다.');
+            }
+
             setSearchResults({
-                photos: response.photos.data,
-                users: response.users.data,
+                photos: response.photos.data || [],
+                users: response.users.data || [],
                 total: {
-                    photos: response.photos.pagination.total,
-                    users: response.users.pagination.total
+                    photos: response.photos.pagination?.total || 0,
+                    users: response.users.pagination?.total || 0
                 }
             });
+            
+            // 성공 시 재시도 카운트 초기화
+            setRetryCount(0);
         } catch (error) {
             console.error('검색 실패:', error);
-            setError(getErrorMessage(error));
+            const errorMessage = getErrorMessage(error);
+            setError(errorMessage);
             setSearchResults({
                 photos: [],
                 users: [],
@@ -81,8 +99,8 @@ function SearchContent() {
     // 실시간 검색 (디바운싱) - 검색어 변경 시 500ms 후 검색 실행
     useEffect(() => {
         // 이전 타이머 취소
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
         }
 
         if (!query.trim()) {
@@ -95,29 +113,29 @@ function SearchContent() {
         }
 
         // 새 타이머 설정 (500ms 디바운싱)
-        const timer = setTimeout(() => {
-            performSearch(query, sortBy);
+        debounceTimerRef.current = setTimeout(() => {
+            performSearch(query, sortBy, false);
         }, 500);
-
-        setDebounceTimer(timer);
 
         // 클린업 함수
         return () => {
-            clearTimeout(timer);
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
         };
-    }, [query, sortBy, performSearch, debounceTimer]);
+    }, [query, sortBy, performSearch]);
 
     // 정렬 방식 변경 시 즉시 검색 실행
     const handleSortChange = useCallback((newSortBy: 'relevance' | 'latest' | 'popular') => {
         setSortBy(newSortBy);
         if (query.trim()) {
             // 디바운스 타이머 취소하고 즉시 검색
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
             }
-            performSearch(query, newSortBy);
+            performSearch(query, newSortBy, false);
         }
-    }, [query, debounceTimer, performSearch]);
+    }, [query, performSearch]);
 
     // 탭 데이터
     const tabs = [
@@ -311,16 +329,31 @@ function SearchContent() {
                             <p className="text-red-500 mb-4">
                                 {error || '검색 중 오류가 발생했습니다'}
                             </p>
-                            <button 
-                                onClick={() => performSearch(query, sortBy)}
-                                className="px-4 py-2 rounded"
-                                style={{ 
-                                    backgroundColor: theme.theme.colors.primary.purple,
-                                    color: theme.theme.colors.primary.white
-                                }}
-                            >
-                                다시 시도
-                            </button>
+                            <div className="space-y-2">
+                                <button 
+                                    onClick={() => performSearch(query, sortBy, true)}
+                                    className="px-4 py-2 rounded font-medium transition-colors hover:opacity-80"
+                                    style={{ 
+                                        backgroundColor: theme.theme.colors.primary.purple,
+                                        color: theme.theme.colors.primary.white
+                                    }}
+                                    disabled={loading}
+                                >
+                                    {loading ? '재시도 중...' : '다시 시도'}
+                                </button>
+                                {retryCount > 0 && (
+                                    <p 
+                                        className="text-xs"
+                                        style={{
+                                            color: isDark
+                                                ? theme.theme.colors.primary.lightGray
+                                                : theme.theme.colors.primary.darkGray,
+                                        }}
+                                    >
+                                        재시도 횟수: {retryCount}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     ) : activeTab === 'photos' ? (
                         // 사진 검색 결과
@@ -346,59 +379,7 @@ function SearchContent() {
                         searchResults.users.length > 0 ? (
                             <div className="grid gap-4">
                                 {searchResults.users.map((user) => (
-                                    <div 
-                                        key={user.id}
-                                        className="flex items-center gap-4 p-4 rounded-lg border transition-colors hover:shadow-md"
-                                        style={{
-                                            backgroundColor: isDark
-                                                ? theme.theme.colors.background.dark
-                                                : theme.theme.colors.primary.white,
-                                            borderColor: isDark
-                                                ? theme.theme.colors.primary.darkGray
-                                                : theme.theme.colors.primary.lightGray,
-                                        }}
-                                    >
-                                        <div 
-                                            className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0"
-                                            style={{
-                                                backgroundImage: user.profileImageUrl 
-                                                    ? `url(${user.profileImageUrl})` 
-                                                    : undefined,
-                                                backgroundSize: 'cover',
-                                                backgroundPosition: 'center',
-                                            }}
-                                        >
-                                            {!user.profileImageUrl && (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <User size={20} className="text-gray-400" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1">
-                                            <h3 
-                                                className="font-semibold"
-                                                style={{
-                                                    color: isDark
-                                                        ? theme.theme.colors.primary.white
-                                                        : theme.theme.colors.primary.black,
-                                                }}
-                                            >
-                                                {user.username}
-                                            </h3>
-                                            {user.bio && (
-                                                <p 
-                                                    className="text-sm mt-1"
-                                                    style={{
-                                                        color: isDark
-                                                            ? theme.theme.colors.primary.lightGray
-                                                            : theme.theme.colors.primary.darkGray,
-                                                    }}
-                                                >
-                                                    {user.bio}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
+                                    <UserCard key={user.id} user={user} />
                                 ))}
                             </div>
                         ) : (
@@ -449,59 +430,7 @@ function SearchContent() {
                                     </h2>
                                     <div className="grid gap-4">
                                         {searchResults.users.map((user) => (
-                                            <div 
-                                                key={user.id}
-                                                className="flex items-center gap-4 p-4 rounded-lg border transition-colors hover:shadow-md"
-                                                style={{
-                                                    backgroundColor: isDark
-                                                        ? theme.theme.colors.background.dark
-                                                        : theme.theme.colors.primary.white,
-                                                    borderColor: isDark
-                                                        ? theme.theme.colors.primary.darkGray
-                                                        : theme.theme.colors.primary.lightGray,
-                                                }}
-                                            >
-                                                <div 
-                                                    className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0"
-                                                    style={{
-                                                        backgroundImage: user.profileImageUrl 
-                                                            ? `url(${user.profileImageUrl})` 
-                                                            : undefined,
-                                                        backgroundSize: 'cover',
-                                                        backgroundPosition: 'center',
-                                                    }}
-                                                >
-                                                    {!user.profileImageUrl && (
-                                                        <div className="w-full h-full flex items-center justify-center">
-                                                            <User size={20} className="text-gray-400" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h3 
-                                                        className="font-semibold"
-                                                        style={{
-                                                            color: isDark
-                                                                ? theme.theme.colors.primary.white
-                                                                : theme.theme.colors.primary.black,
-                                                        }}
-                                                    >
-                                                        {user.username}
-                                                    </h3>
-                                                    {user.bio && (
-                                                        <p 
-                                                            className="text-sm mt-1"
-                                                            style={{
-                                                                color: isDark
-                                                                    ? theme.theme.colors.primary.lightGray
-                                                                    : theme.theme.colors.primary.darkGray,
-                                                            }}
-                                                        >
-                                                            {user.bio}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <UserCard key={user.id} user={user} />
                                         ))}
                                     </div>
                                 </div>
