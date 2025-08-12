@@ -17,7 +17,10 @@ import {
     Flag,
     Eye,
 } from "lucide-react";
-import { PhotoDetail, CommentDetail, createID } from "@/types";
+import { PhotoDetail, CommentDetail } from "@/types";
+import { apiClient, getErrorMessage } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
+import toast from "react-hot-toast";
 
 interface PhotoModalProps {
     photo: PhotoDetail;
@@ -44,11 +47,14 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
     onFollow: _onFollow,
 }) => {
     const { theme, isDark } = useThemeContext();
+    const { isAuthenticated } = useAuth();
     const [activeTab, setActiveTab] = useState<'comments' | 'info'>('comments');
     const [newComment, setNewComment] = useState("");
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
-    const [comments, setComments] = useState<CommentDetail[]>([
-    ]);
+    const [comments, setComments] = useState<CommentDetail[]>([]);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [commentsError, setCommentsError] = useState<string | null>(null);
+    const [commentSubmitting, setCommentSubmitting] = useState(false);
 
     // 키보드 네비게이션
     useEffect(() => {
@@ -85,6 +91,35 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [isOpen, hasNext, hasPrevious, onNext, onPrevious, onClose, onLike, photo.id]);
 
+    // 댓글 로드
+    const loadComments = useCallback(async () => {
+        if (!photo?.id) return;
+        
+        try {
+            setCommentsLoading(true);
+            setCommentsError(null);
+            
+            const response = await apiClient.getComments(photo.id);
+            // API 응답이 CommentListResponse 형태라고 가정
+            const commentsData = Array.isArray(response) ? response : response.comments || [];
+            setComments(commentsData);
+        } catch (error) {
+            console.error('댓글 로드 실패:', error);
+            const errorMessage = getErrorMessage(error);
+            setCommentsError(errorMessage);
+            toast.error(`댓글을 불러올 수 없습니다: ${errorMessage}`);
+        } finally {
+            setCommentsLoading(false);
+        }
+    }, [photo?.id]);
+
+    // 모달이 열리고 사진이 변경될 때 댓글 로드
+    useEffect(() => {
+        if (isOpen && photo?.id) {
+            loadComments();
+        }
+    }, [isOpen, photo?.id, loadComments]);
+
     // 모달 오픈 시 스크롤 방지
     useEffect(() => {
         if (isOpen) {
@@ -98,80 +133,66 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
         };
     }, [isOpen]);
 
-    const handleAddComment = useCallback(() => {
-        if (!newComment.trim()) return;
-
-        if (replyingTo) {
-            // 답글 추가
-            const reply: CommentDetail = {
-                id: Math.floor(Math.random() * 10000),
-                userId: 1,
-                content: newComment,
-                photoId: photo.id,
-                seriesId: null,
-                parentId: replyingTo,
-                deletedAt: null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                author: {
-                    id: createID(1),
-                    username: "current_user",
-                    bio: null,
-                    profileImageUrl: null,
-                    createdAt: new Date().toISOString(),
-                },
-                likesCount: 0,
-                repliesCount: 0,
-                replies: [],
-                isLikedByCurrentUser: false,
-                isOwner: true,
-            };
-
-            setComments(prev =>
-                prev.map(comment =>
-                    comment.id === replyingTo
-                        ? {
-                            ...comment,
-                            replies: [...(comment.replies || []), reply], // 시간순 정렬 (새 답글을 뒤에 추가)
-                        }
-                        : comment
-                )
-            );
-            setReplyingTo(null);
-        } else {
-            // 새 댓글 추가
-            const comment: CommentDetail = {
-                id: Math.floor(Math.random() * 10000),
-                userId: 1,
-                content: newComment,
-                photoId: photo.id,
-                seriesId: null,
-                parentId: null,
-                deletedAt: null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                author: {
-                    id: createID(1),
-                    username: "current_user",
-                    bio: null,
-                    profileImageUrl: null,
-                    createdAt: new Date().toISOString(),
-                },
-                likesCount: 0,
-                repliesCount: 0,
-                replies: [],
-                isLikedByCurrentUser: false,
-                isOwner: true,
-            };
-
-            setComments(prev => [comment, ...prev]);
-        }
+    const handleAddComment = useCallback(async () => {
+        if (!newComment.trim() || commentSubmitting) return;
         
-        setNewComment("");
-    }, [newComment, replyingTo, photo.id]);
+        if (!isAuthenticated) {
+            toast.error('댓글을 작성하려면 로그인해주세요.');
+            return;
+        }
 
-    // 댓글 좋아요 핸들러
-    const handleCommentLike = useCallback((commentId: number, isReply: boolean = false, parentId?: number) => {
+        try {
+            setCommentSubmitting(true);
+            
+            const commentData = {
+                content: newComment,
+                photoId: photo.id,
+                parentId: replyingTo,
+                seriesId: undefined
+            };
+
+            // 실제 API 호출
+            const newCommentResponse = await apiClient.createComment(commentData);
+            
+            if (replyingTo) {
+                // 답글인 경우 - 해당 댓글의 replies 배열에 추가
+                setComments(prev =>
+                    prev.map(comment =>
+                        comment.id === replyingTo
+                            ? {
+                                ...comment,
+                                replies: [...(comment.replies || []), newCommentResponse],
+                                repliesCount: (comment.repliesCount || 0) + 1,
+                            }
+                            : comment
+                    )
+                );
+            } else {
+                // 새 댓글인 경우 - 댓글 목록 상단에 추가
+                setComments(prev => [newCommentResponse, ...prev]);
+            }
+            
+            setNewComment("");
+            setReplyingTo(null);
+            toast.success('댓글이 추가되었습니다.');
+            
+        } catch (error) {
+            console.error('댓글 추가 실패:', error);
+            const errorMessage = getErrorMessage(error);
+            toast.error(`댓글 추가 실패: ${errorMessage}`);
+        } finally {
+            setCommentSubmitting(false);
+        }
+    }, [newComment, replyingTo, photo.id, isAuthenticated, commentSubmitting]);
+
+    // 댓글 좋아요 핸들러 (TODO: 댓글 좋아요 API가 구현되면 연동)
+    const handleCommentLike = useCallback(async (commentId: number, isReply: boolean = false, parentId?: number) => {
+        if (!isAuthenticated) {
+            toast.error('좋아요를 누르려면 로그인해주세요.');
+            return;
+        }
+
+        // 낙관적 업데이트 (UI 먼저 업데이트)
         if (isReply && parentId) {
             // 답글 좋아요
             setComments(prev =>
@@ -206,7 +227,16 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                 )
             );
         }
-    }, []);
+        
+        // TODO: 댓글 좋아요 API가 구현되면 여기에 실제 API 호출 추가
+        // try {
+        //     await apiClient.toggleCommentLike({ commentId });
+        // } catch (error) {
+        //     // API 실패 시 이전 상태로 되돌리기
+        //     console.error('댓글 좋아요 실패:', error);
+        //     toast.error('좋아요 처리 중 오류가 발생했습니다.');
+        // }
+    }, [isAuthenticated]);
 
     // 답글 작성 시작
     const handleStartReply = useCallback((commentId: number) => {
@@ -529,7 +559,75 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                         {activeTab === 'comments' && (
                             <div className="h-full flex flex-col">
                                 {/* Comments List */}
-                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    {commentsLoading ? (
+                                        // 로딩 상태
+                                        <div className="flex items-center justify-center py-8">
+                                            <div 
+                                                className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full"
+                                                style={{
+                                                    borderColor: theme.theme.colors.primary.purple,
+                                                    borderTopColor: "transparent",
+                                                }}
+                                            />
+                                            <span 
+                                                className="ml-2 text-sm"
+                                                style={{
+                                                    color: isDark
+                                                        ? theme.theme.colors.primary.gray
+                                                        : theme.theme.colors.primary.darkGray,
+                                                }}
+                                            >
+                                                댓글을 불러오는 중...
+                                            </span>
+                                        </div>
+                                    ) : commentsError ? (
+                                        // 에러 상태
+                                        <div className="flex flex-col items-center justify-center py-8">
+                                            <p 
+                                                className="text-sm text-center mb-4"
+                                                style={{ color: theme.theme.colors.accent.pink }}
+                                            >
+                                                댓글을 불러올 수 없습니다
+                                            </p>
+                                            <button 
+                                                onClick={loadComments}
+                                                className="px-4 py-2 rounded text-sm font-medium"
+                                                style={{ 
+                                                    backgroundColor: theme.theme.colors.primary.purple,
+                                                    color: theme.theme.colors.primary.white
+                                                }}
+                                            >
+                                                다시 시도
+                                            </button>
+                                        </div>
+                                    ) : comments.length === 0 ? (
+                                        // 댓글 없음
+                                        <div className="flex flex-col items-center justify-center py-8">
+                                            <MessageCircle 
+                                                size={48} 
+                                                className="mb-4 opacity-50"
+                                                style={{
+                                                    color: isDark
+                                                        ? theme.theme.colors.primary.gray
+                                                        : theme.theme.colors.primary.darkGray,
+                                                }}
+                                            />
+                                            <p 
+                                                className="text-sm text-center"
+                                                style={{
+                                                    color: isDark
+                                                        ? theme.theme.colors.primary.gray
+                                                        : theme.theme.colors.primary.darkGray,
+                                                }}
+                                            >
+                                                아직 댓글이 없습니다<br/>
+                                                첫 번째 댓글을 남겨보세요!
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        // 댓글 목록
+                                        <div className="space-y-4">
                                     {comments.map((comment) => (
                                         <div key={comment.id} className="space-y-3">
                                             {/* Main Comment */}
@@ -703,7 +801,8 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                                             )}
                                         </div>
                                     ))}
-                                </div>
+                                        </div>
+                                    )}
 
                                 {/* Comment Input */}
                                 <div
@@ -772,16 +871,27 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                                         />
                                         <button
                                             onClick={handleAddComment}
-                                            disabled={!newComment.trim()}
-                                            className="p-2 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                                            disabled={!newComment.trim() || commentSubmitting}
+                                            className="p-2 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 flex items-center justify-center"
                                             style={{
                                                 backgroundColor: replyingTo 
                                                     ? theme.theme.colors.accent.pink
                                                     : theme.theme.colors.primary.purple,
                                                 color: theme.theme.colors.primary.white,
+                                                minWidth: '40px', // 고정 너비로 로딩 중 레이아웃 방지
                                             }}
                                         >
-                                            <Send size={16} />
+                                            {commentSubmitting ? (
+                                                <div 
+                                                    className="animate-spin w-4 h-4 border-2 border-t-transparent rounded-full"
+                                                    style={{
+                                                        borderColor: 'currentColor',
+                                                        borderTopColor: 'transparent',
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Send size={16} />
+                                            )}
                                         </button>
                                     </div>
                                 </div>
