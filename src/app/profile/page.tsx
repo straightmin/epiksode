@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
 import { Camera, Calendar, Heart, Bookmark, UserPlus, UserMinus, Settings } from "lucide-react";
 import PhotoGrid from "../../components/photos/PhotoGrid";
-import { PhotoDetail, User } from '@/types';
+import { PhotoDetail, User, safeParseID } from '@/types';
 import { apiClient, getErrorMessage } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,7 +24,8 @@ function ProfileContent() {
     const [error, setError] = useState<string | null>(null);
 
     // 현재 사용자의 프로필인지 확인
-    const isOwnProfile = !userId || (currentUser && currentUser.id === parseInt(userId));
+    const parsedUserId = userId ? safeParseID(userId) : null;
+    const isOwnProfile = !userId || (currentUser && parsedUserId && currentUser.id === parsedUserId);
 
     // 프로필 데이터 로드
     useEffect(() => {
@@ -43,14 +44,16 @@ function ProfileContent() {
                     // 본인 사진 목록 로드
                     const photos = await apiClient.getUserPhotos(currentUser.id);
                     setUserPhotos(photos);
-                } else if (userId) {
+                } else if (userId && parsedUserId) {
                     // 다른 사용자 프로필인 경우
-                    const userIdNumber = parseInt(userId);
-                    profileData = await apiClient.getUserProfile(userIdNumber);
+                    if (!parsedUserId) {
+                        throw new Error(`잘못된 사용자 ID: ${userId}`);
+                    }
+                    profileData = await apiClient.getUserProfile(parsedUserId);
                     setUserProfile(profileData);
                     
                     // 해당 사용자 사진 목록 로드
-                    const photos = await apiClient.getUserPhotos(userIdNumber);
+                    const photos = await apiClient.getUserPhotos(parsedUserId);
                     setUserPhotos(photos);
                 } else {
                     // 로그인이 필요한 경우
@@ -65,7 +68,7 @@ function ProfileContent() {
         };
 
         loadProfileData();
-    }, [userId, isOwnProfile, currentUser]);
+    }, [userId, isOwnProfile, currentUser, parsedUserId]);
 
     // 팔로우 토글
     const handleFollow = async () => {

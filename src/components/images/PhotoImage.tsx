@@ -159,8 +159,7 @@ const PhotoImage: React.FC<PhotoImageProps> = ({
         
         debugImageUrl('이미지 로드 성공', { photoId, thumbnail, url: imageUrl });
         onLoad?.();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onLoad, progressiveLoading, progressiveState]);
+    }, [onLoad, progressiveLoading, progressiveState, photoId, thumbnail, imageUrl]);
 
     const handleError = useCallback(() => {
         setHasError(true);
@@ -169,8 +168,7 @@ const PhotoImage: React.FC<PhotoImageProps> = ({
         const error = new Error(`이미지 로드 실패: photoId=${photoId}, thumbnail=${thumbnail}`);
         debugImageUrl('이미지 로드 실패', { photoId, thumbnail, url: imageUrl, error });
         onError?.(error);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onError]);
+    }, [onError, photoId, thumbnail, imageUrl]);
 
     const handleClick = useCallback(() => {
         if (onClick && !hasError) {
@@ -200,9 +198,7 @@ const PhotoImage: React.FC<PhotoImageProps> = ({
         };
         img.onerror = () => setHasError(true);
         img.src = thumbnailUrl;
-        
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [progressiveLoading, thumbnailUrl]); // progressiveState를 dependency에서 제거
+    }, [progressiveLoading, thumbnailUrl, progressiveState]);
 
     // =============================================================================
     // 🎨 스타일 계산

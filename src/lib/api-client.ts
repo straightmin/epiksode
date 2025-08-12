@@ -105,7 +105,12 @@ class TokenManager {
         try {
             this.token = localStorage.getItem(TOKEN_STORAGE_KEY);
             const expires = localStorage.getItem(TOKEN_EXPIRES_KEY);
-            this.expiresAt = expires ? parseInt(expires, 10) : null;
+            if (expires) {
+                const parsed = parseInt(expires, 10);
+                this.expiresAt = isNaN(parsed) ? null : parsed;
+            } else {
+                this.expiresAt = null;
+            }
         } catch (error) {
             console.warn('토큰 로드 실패:', error);
         }
@@ -180,6 +185,50 @@ export class ApiClient {
 
     constructor(private config = API_CONFIG) {}
 
+    /**
+     * AbortController를 사용한 타임아웃 구현
+     */
+    private createAbortSignal(timeout: number): AbortSignal {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), timeout);
+        return controller.signal;
+    }
+
+    /**
+     * 타임아웃을 적용한 fetch 실행
+     */
+    private async fetchWithTimeout(
+        url: string,
+        options: RequestInit,
+        timeout: number = this.config.timeout
+    ): Promise<Response> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error instanceof Error && error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * 재시도 가능한 에러인지 판단
+     */
+    private isRetryableHttpError(status: number): boolean {
+        // 5xx 서버 에러나 429 (Too Many Requests)는 재시도 가능
+        return status >= 500 || status === 429;
+    }
+
     /** HTTP 요청 실행 */
     private async request<T>(
         endpoint: string,
@@ -204,40 +253,53 @@ export class ApiClient {
             ...options,
             headers,
             credentials: 'include', // CORS credentials 포함
-            // AbortSignal.timeout은 브라우저 호환성 문제로 제거
-            // signal: AbortSignal.timeout(this.config.timeout),
         };
 
         let lastError: Error;
+        const maxAttempts = this.config.retryAttempts + 1; // 초기 시도 포함
 
         // 재시도 로직
-        for (let attempt = 0; attempt < this.config.retryAttempts; attempt++) {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
             try {
-                console.log(`🚀 Fetch 시도 ${attempt + 1}:`, { url, method: requestOptions.method });
-                const response = await fetch(url, requestOptions);
+                console.log(`🚀 Fetch 시도 ${attempt + 1}/${maxAttempts}:`, { url, method: requestOptions.method });
+                
+                // 타임아웃이 적용된 fetch 사용
+                const response = await this.fetchWithTimeout(url, requestOptions, this.config.timeout);
+                
                 console.log(`✅ Fetch 응답 받음:`, { 
                     status: response.status, 
                     statusText: response.statusText,
-                    ok: response.ok,
-                    headers: Object.fromEntries(response.headers.entries())
+                    ok: response.ok
                 });
+                
+                // 재시도 가능한 HTTP 에러인 경우
+                if (!response.ok && this.isRetryableHttpError(response.status) && attempt < maxAttempts - 1) {
+                    const delay = this.config.retryDelay * Math.pow(2, attempt);
+                    console.log(`⚠️ HTTP ${response.status} 에러, ${delay}ms 후 재시도...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                
                 return await this.handleResponse<T>(response);
             } catch (error) {
                 lastError = error as Error;
-                console.error(`❌ Fetch 에러 (시도 ${attempt + 1}):`, {
+                console.error(`❌ Fetch 에러 (시도 ${attempt + 1}/${maxAttempts}):`, {
                     error: error,
                     message: error instanceof Error ? error.message : String(error),
-                    name: error instanceof Error ? error.name : 'Unknown',
-                    stack: error instanceof Error ? error.stack : undefined
+                    name: error instanceof Error ? error.name : 'Unknown'
                 });
                 
-                // 마지막 시도가 아니면 재시도
-                if (attempt < this.config.retryAttempts - 1) {
-                    // 지수 백오프로 딜레이
-                    const delay = this.config.retryDelay * Math.pow(2, attempt);
-                    console.log(`⏳ ${delay}ms 후 재시도...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
+                // 마지막 시도가 아니고 재시도 가능한 에러인 경우
+                if (attempt < maxAttempts - 1) {
+                    // 네트워크 에러나 타임아웃은 재시도
+                    if (lastError.message === 'Request timeout' || 
+                        lastError.name === 'TypeError' || 
+                        lastError.name === 'NetworkError') {
+                        const delay = this.config.retryDelay * Math.pow(2, attempt);
+                        console.log(`⏳ ${delay}ms 후 재시도...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
                 }
             }
         }
@@ -318,7 +380,8 @@ export class ApiClient {
 
     /** 네트워크 에러 생성 */
     private createNetworkError(originalError: Error): ApiClientError {
-        if (originalError.name === 'AbortError') {
+        // 타임아웃 에러
+        if (originalError.message === 'Request timeout' || originalError.name === 'AbortError') {
             return new ApiClientError(
                 'TIMEOUT_ERROR',
                 0,
@@ -686,7 +749,12 @@ export class ApiClient {
 
             return {
                 contentType: response.headers.get('content-type') || undefined,
-                contentLength: response.headers.get('content-length') ? parseInt(response.headers.get('content-length')!) : undefined,
+                contentLength: (() => {
+                    const length = response.headers.get('content-length');
+                    if (!length) return undefined;
+                    const parsed = parseInt(length, 10);
+                    return isNaN(parsed) ? undefined : parsed;
+                })(),
                 lastModified: response.headers.get('last-modified') || undefined,
                 etag: response.headers.get('etag') || undefined,
             };

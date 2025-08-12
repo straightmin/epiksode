@@ -11,8 +11,53 @@
 // 🛠️ 유틸리티 타입
 // =============================================================================
 
-/** ID 타입 정의 (타입 안전성 강화) */
-export type ID = number;
+/** ID 타입 정의 - Branded Type으로 타입 안전성 강화 */
+export type ID = number & { readonly __brand: unique symbol };
+
+/** 
+ * ID 생성 함수 - 양수 정수만 허용
+ * @throws {Error} 양수 정수가 아닌 경우 에러 발생
+ */
+export function createID(value: number): ID {
+    if (!Number.isInteger(value) || value <= 0) {
+        throw new Error(`Invalid ID: ${value}. ID must be a positive integer.`);
+    }
+    return value as ID;
+}
+
+/**
+ * 문자열을 ID로 파싱
+ * @throws {Error} 유효하지 않은 ID 문자열인 경우 에러 발생
+ */
+export function parseID(value: string): ID {
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed)) {
+        throw new Error(`Invalid ID string: "${value}". Cannot parse to number.`);
+    }
+    return createID(parsed);
+}
+
+/**
+ * 안전한 ID 파싱 (에러 대신 null 반환)
+ */
+export function safeParseID(value: string | number | null | undefined): ID | null {
+    if (value === null || value === undefined) {
+        return null;
+    }
+    
+    try {
+        if (typeof value === 'number') {
+            return createID(value);
+        }
+        if (typeof value === 'string') {
+            return parseID(value);
+        }
+    } catch {
+        return null;
+    }
+    
+    return null;
+}
 
 /** 선택적 필드를 가진 타입 생성 */
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -425,18 +470,12 @@ export function isApiError(value: unknown): value is ApiError {
 // 🔧 유틸리티 함수들
 // =============================================================================
 
-/** 안전한 ID 변환 */
+/** 
+ * 안전한 ID 변환 (legacy 호환용)
+ * @deprecated safeParseID 사용 권장
+ */
 export function toID(value: unknown): ID | null {
-  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
-    return value as ID;
-  }
-  if (typeof value === 'string') {
-    const parsed = parseInt(value, 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      return parsed as ID;
-    }
-  }
-  return null;
+  return safeParseID(value as string | number | null | undefined);
 }
 
 /** 객체가 비어있는지 확인 */

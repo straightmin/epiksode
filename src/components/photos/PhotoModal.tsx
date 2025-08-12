@@ -17,7 +17,7 @@ import {
     Flag,
     Eye,
 } from "lucide-react";
-import { PhotoDetail, CommentDetail } from "@/types";
+import { PhotoDetail, CommentDetail, createID } from "@/types";
 
 interface PhotoModalProps {
     photo: PhotoDetail;
@@ -114,7 +114,7 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 author: {
-                    id: 1,
+                    id: createID(1),
                     username: "current_user",
                     bio: null,
                     profileImageUrl: null,
@@ -151,7 +151,7 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(({
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 author: {
-                    id: 1,
+                    id: createID(1),
                     username: "current_user",
                     bio: null,
                     profileImageUrl: null,
