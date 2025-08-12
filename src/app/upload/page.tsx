@@ -8,6 +8,7 @@ import { Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient, getErrorMessage } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface UploadFile {
     id: string;
@@ -21,100 +22,61 @@ interface UploadFile {
 
 export default function UploadPage() {
     const { theme, isDark } = useThemeContext();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { confirm, modal } = useConfirmModal();
     
-    // 인증 체크
+    // 인증 체크 - isLoading이 완료된 후에만 체크
     React.useEffect(() => {
-        if (!isAuthenticated) {
+        if (!authLoading && !isAuthenticated) {
             toast.error('사진을 업로드하려면 로그인해주세요.');
             router.push('/');
         }
-    }, [isAuthenticated, router]);
-
-    // 파일 업로드 처리
-    const handleFiles = useCallback((files: FileList | null) => {
-        if (!files) return;
-
-        const newFiles: UploadFile[] = [];
-        Array.from(files).forEach((file) => {
-            if (file.type.startsWith('image/')) {
-                const id = `file-${uploadFiles.length + newFiles.length}-${Math.random().toString(36).substring(7)}`;
-                const preview = URL.createObjectURL(file);
-                
-                newFiles.push({
-                    id,
-                    file,
-                    preview,
-                    progress: 0,
-                    status: 'uploading',
-                    title: file.name.replace(/\.[^/.]+$/, ""), // 확장자 제거
-                    description: '',
-                });
-            }
-        });
-
-        setUploadFiles(prev => [...prev, ...newFiles]);
-
-        // 실제 업로드 시작
-        newFiles.forEach(uploadFile => {
-            uploadPhoto(uploadFile.id);
-        });
-    }, [uploadFiles.length]);
+    }, [isAuthenticated, authLoading, router]);
 
     // 실제 사진 업로드 함수
-    const uploadPhoto = useCallback(async (fileId: string) => {
-        const uploadFile = uploadFiles.find(f => f.id === fileId);
-        if (!uploadFile) return;
+    const uploadPhoto = useCallback(async (uploadFile: UploadFile) => {
         
         try {
-            // FormData 생성
-            const formData = new FormData();
-            formData.append('photo', uploadFile.file);
-            formData.append('title', uploadFile.title);
-            if (uploadFile.description) {
-                formData.append('description', uploadFile.description);
-            }
+            // 업로드 진행률 업데이트 (간접 표시)
+            setUploadFiles(prev => 
+                prev.map(file => 
+                    file.id === uploadFile.id 
+                        ? { ...file, progress: 50, status: 'uploading' }
+                        : file
+                )
+            );
             
             // 업로드 시작
-            const response = await apiClient.uploadPhoto(formData, {
-                onProgress: (progressEvent) => {
-                    if (progressEvent.total) {
-                        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setUploadFiles(prev => 
-                            prev.map(file => 
-                                file.id === fileId 
-                                    ? { ...file, progress, status: progress >= 100 ? 'completed' : 'uploading' }
-                                    : file
-                            )
-                        );
-                    }
-                }
+            await apiClient.uploadPhoto({
+                title: uploadFile.title,
+                description: uploadFile.description,
+                image: uploadFile.file
             });
             
             // 업로드 완료
             setUploadFiles(prev => 
                 prev.map(file => 
-                    file.id === fileId 
+                    file.id === uploadFile.id 
                         ? { ...file, progress: 100, status: 'completed' }
                         : file
                 )
             );
             
-            console.log('업로드 성공:', response);
+            // 업로드 성공 처리 (응답 데이터는 필요시 추가 처리)
             
         } catch (error) {
-            console.error('업로드 실패:', error);
+            // 에러 처리 - getErrorMessage에서 이미 에러 로깅 처리됨
             const errorMessage = getErrorMessage(error);
             
             // 에러 상태로 업데이트
             setUploadFiles(prev => 
                 prev.map(file => 
-                    file.id === fileId 
+                    file.id === uploadFile.id 
                         ? { ...file, status: 'error' }
                         : file
                 )
@@ -122,7 +84,41 @@ export default function UploadPage() {
             
             toast.error(`${uploadFile.title} 업로드 실패: ${errorMessage}`);
         }
-    }, [uploadFiles]);
+    }, []); // uploadFile 객체를 직접 전달받으므로 의존성 배열에서 uploadFiles 제거
+
+    // 파일 업로드 처리
+    const handleFiles = useCallback((files: FileList | null) => {
+        if (!files) return;
+
+        setUploadFiles(prev => {
+            const newFiles: UploadFile[] = [];
+            Array.from(files).forEach((file) => {
+                if (file.type.startsWith('image/')) {
+                    const id = `file-${prev.length + newFiles.length}-${Math.random().toString(36).substring(7)}`;
+                    const preview = URL.createObjectURL(file);
+                    
+                    newFiles.push({
+                        id,
+                        file,
+                        preview,
+                        progress: 0,
+                        status: 'uploading',
+                        title: file.name.replace(/\.[^/.]+$/, ""), // 확장자 제거
+                        description: '',
+                    });
+                }
+            });
+
+            // 새 파일들의 업로드를 시작 (비동기로)
+            setTimeout(() => {
+                newFiles.forEach(uploadFile => {
+                    uploadPhoto(uploadFile);
+                });
+            }, 0);
+
+            return [...prev, ...newFiles];
+        });
+    }, [uploadPhoto]); // uploadPhoto 함수에 대한 참조 필요
 
     // 드래그 앤 드롭 핸들러
     const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -157,22 +153,33 @@ export default function UploadPage() {
     }, [handleFiles]);
 
     // 파일 제거
-    const removeFile = useCallback((fileId: string) => {
+    const removeFile = useCallback(async (fileId: string) => {
         setUploadFiles(prev => {
             const fileToRemove = prev.find(f => f.id === fileId);
             if (fileToRemove) {
                 // 업로드 중인 파일인 경우 확인
                 if (fileToRemove.status === 'uploading') {
-                    if (!confirm('업로드가 진행 중입니다. 정말로 제거하시겠습니까?')) {
-                        return prev; // 취소하면 기존 상태 유지
-                    }
+                    // 비동기 확인 처리
+                    confirm({
+                        title: '업로드 중인 파일 제거',
+                        message: `"${fileToRemove.title}" 업로드가 진행 중입니다. 정말로 제거하시겠습니까?`,
+                        confirmText: '제거',
+                        cancelText: '취소',
+                        variant: 'danger'
+                    }).then((confirmed) => {
+                        if (confirmed) {
+                            URL.revokeObjectURL(fileToRemove.preview);
+                            setUploadFiles(prevFiles => prevFiles.filter(f => f.id !== fileId));
+                        }
+                    });
+                    return prev; // 확인 대기 중에는 기존 상태 유지
                 }
                 
                 URL.revokeObjectURL(fileToRemove.preview);
             }
             return prev.filter(f => f.id !== fileId);
         });
-    }, []);
+    }, [confirm]);
 
     // 메타데이터 업데이트
     const updateFileMetadata = useCallback((fileId: string, field: 'title' | 'description', value: string) => {
@@ -185,43 +192,51 @@ export default function UploadPage() {
 
     // 업로드 완료된 사진들을 확인하고 홈으로 이동
     const publishPhotos = useCallback(async () => {
-        const completedFiles = uploadFiles.filter(file => file.status === 'completed');
-        
-        if (completedFiles.length === 0) {
-            toast.error('업로드가 완료된 사진이 없습니다.');
-            return;
-        }
-        
-        try {
-            setIsPublishing(true);
+        setUploadFiles(currentFiles => {
+            const completedFiles = currentFiles.filter(file => file.status === 'completed');
             
-            // 모든 사진이 업로드 완료되었으니 홈으로 이동
+            if (completedFiles.length === 0) {
+                toast.error('업로드가 완료된 사진이 없습니다.');
+                return currentFiles; // 상태 변경 없음
+            }
             
-            // 파일 미리보기 URL 정리
-            completedFiles.forEach(file => {
-                URL.revokeObjectURL(file.preview);
-            });
+            // 비동기 처리 시작
+            (async () => {
+                try {
+                    setIsPublishing(true);
+                    
+                    // 모든 사진이 업로드 완료되었으니 홈으로 이동
+                    
+                    // 파일 미리보기 URL 정리
+                    completedFiles.forEach(file => {
+                        URL.revokeObjectURL(file.preview);
+                    });
+                    
+                    // 성공 메시지 표시
+                    toast.success(`${completedFiles.length}개의 사진이 성공적으로 업로드되었습니다!`);
+                    
+                    // 홈으로 이동
+                    router.push('/');
+                    
+                } catch (error) {
+                    // 게시 중 오류 처리 - 사용자에게 토스트 메시지로 알림
+                    const errorMessage = getErrorMessage(error);
+                    toast.error(`사진 게시 중 오류가 발생했습니다: ${errorMessage}`);
+                } finally {
+                    setIsPublishing(false);
+                }
+            })();
             
-            // 성공 메시지 표시
-            toast.success(`${completedFiles.length}개의 사진이 성공적으로 업로드되었습니다!`);
-            
-            // 홈으로 이동
-            router.push('/');
-            
-        } catch (error) {
-            console.error('게시 오류:', error);
-            toast.error('사진 게시 중 오류가 발생했습니다.');
-        } finally {
-            setIsPublishing(false);
-        }
-    }, [uploadFiles, router]);
+            return currentFiles; // 상태는 변경하지 않음
+        });
+    }, [router]);
 
     const completedCount = uploadFiles.filter(f => f.status === 'completed').length;
     const errorCount = uploadFiles.filter(f => f.status === 'error').length;
     const uploadingCount = uploadFiles.filter(f => f.status === 'uploading').length;
 
-    // 인증되지 않은 사용자는 로딩 화면 표시
-    if (!isAuthenticated) {
+    // 인증 로딩 중이거나 인증되지 않은 사용자는 로딩 화면 표시
+    if (authLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div 
@@ -236,14 +251,18 @@ export default function UploadPage() {
     }
 
     return (
-        <div 
-            className="min-h-screen p-4 lg:p-8"
-            style={{
-                backgroundColor: isDark
-                    ? theme.theme.colors.background.dark
-                    : theme.theme.colors.background.main,
-            }}
-        >
+        <>
+            {/* 확인 모달 */}
+            {modal}
+            
+            <div 
+                className="min-h-screen p-4 lg:p-8"
+                style={{
+                    backgroundColor: isDark
+                        ? theme.theme.colors.background.dark
+                        : theme.theme.colors.background.main,
+                }}
+            >
             <div className="max-w-4xl mx-auto">
                 {/* Page Header */}
                 <div className="mb-8">
@@ -584,6 +603,7 @@ export default function UploadPage() {
                     </div>
                 )}
             </div>
-        </div>
+            </div>
+        </>
     );
 }
