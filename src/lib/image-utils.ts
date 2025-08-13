@@ -39,16 +39,29 @@ export function getImageUrl(photoId: number, thumbnail = false): string {
         return getPlaceholderImageUrl();
     }
 
-    const endpoint = thumbnail ? "thumbnails" : "";
-    const url = `${IMAGE_BASE_URL}/${endpoint ? endpoint + "/" : ""}${photoId}`;
+    try {
+        // URL 객체를 사용하여 안전하게 URL 생성 (double-slash 방지)
+        const baseUrl = new URL(IMAGE_BASE_URL);
+        const pathSegments = thumbnail 
+            ? ['thumbnails', photoId.toString()]
+            : [photoId.toString()];
+        
+        baseUrl.pathname = baseUrl.pathname.replace(/\/$/, '') + '/' + pathSegments.join('/');
+        const url = baseUrl.toString();
 
-    if (DEBUG_MODE) {
-        console.log(
-            `getImageUrl: photoId=${photoId}, thumbnail=${thumbnail} → ${url}`
-        );
+        if (DEBUG_MODE) {
+            console.log(
+                `getImageUrl: photoId=${photoId}, thumbnail=${thumbnail} → ${url}`
+            );
+        }
+
+        return url;
+    } catch (error) {
+        // URL 생성 실패 시 기존 방식으로 폴백
+        console.warn('URL 생성 실패, 기존 방식 사용:', error);
+        const endpoint = thumbnail ? "thumbnails" : "";
+        return `${IMAGE_BASE_URL}/${endpoint ? endpoint + "/" : ""}${photoId}`;
     }
-
-    return url;
 }
 
 /**
@@ -128,7 +141,10 @@ export function getDefaultSizes(breakpoints?: string): string {
  * @returns S3 URL 여부
  */
 export function isS3Url(url: string): boolean {
-    return url?.includes("amazonaws.com") || url?.includes("s3.") || false;
+    if (!url) return false;
+    
+    const s3Domains = process.env.NEXT_PUBLIC_S3_DOMAINS?.split(',') || ['.s3.', 'amazonaws.com'];
+    return s3Domains.some(domain => url.includes(domain));
 }
 
 /**

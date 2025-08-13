@@ -474,19 +474,6 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    {/* 팔로우 버튼 - 백엔드 API 확장 필요 */}
-                                    {/* <button
-                                    onClick={() => onFollow?.(photo.author.id)}
-                                    className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
-                                    style={{
-                                        backgroundColor: theme.theme.colors.primary.purple,
-                                        color: theme.theme.colors.primary.white,
-                                        border: `1px solid ${theme.theme.colors.primary.purple}`,
-                                    }}
-                                >
-                                    팔로우
-                                </button> */}
-
                                     <button
                                         className="p-2 rounded-full transition-colors"
                                         style={{

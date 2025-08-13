@@ -679,7 +679,10 @@ export class ApiClient {
             }
 
             // S3 URL인 경우 프록시 URL로 변환
-            if (url.includes(".s3.") || url.includes("amazonaws.com")) {
+            const s3Domains = process.env.NEXT_PUBLIC_S3_DOMAINS?.split(',') || ['.s3.', 'amazonaws.com'];
+            const isS3Url = s3Domains.some(domain => url.includes(domain));
+            
+            if (isS3Url) {
                 const baseUrl = this.config.baseUrl.replace("/api", ""); // http://localhost:3001
                 return isThumbnail
                     ? `${baseUrl}/api/images/thumbnails/${photoId}`
