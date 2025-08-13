@@ -19,7 +19,7 @@ const IMAGE_BASE_URL =
     process.env.NEXT_PUBLIC_IMAGE_BASE_URL || `${API_BASE_URL}/api/images`;
 
 /** 디버깅 모드 */
-const DEBUG_MODE = false; // process.env.NEXT_PUBLIC_DEBUG === 'true';
+const DEBUG_MODE = false; // process.env.NEXT_PUBLIC_DEBUG === "true";
 
 // =============================================================================
 // 🖼️ 이미지 URL 생성 함수

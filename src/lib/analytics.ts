@@ -296,17 +296,23 @@ export class PerformanceMonitor {
             const fidObserver = new PerformanceObserver((list) => {
                 const entries = list.getEntries();
                 entries.forEach((entry) => {
-                    const eventEntry = entry as PerformanceEventTiming;
-                    const fidValue = eventEntry.processingStart - eventEntry.startTime;
-                    analytics.track("web_vital_fid", {
-                        value: fidValue,
-                        threshold:
-                            fidValue > 300
-                                ? "poor"
-                                : fidValue > 100
-                                  ? "needs_improvement"
-                                  : "good",
-                    });
+                    // Use proper PerformanceEntry interface with runtime type check
+                    if ("processingStart" in entry && "startTime" in entry) {
+                        const eventEntry = entry as PerformanceEntry & {
+                            processingStart: number;
+                            startTime: number;
+                        };
+                        const fidValue = eventEntry.processingStart - eventEntry.startTime;
+                        analytics.track("web_vital_fid", {
+                            value: fidValue,
+                            threshold:
+                                fidValue > 300
+                                    ? "poor"
+                                    : fidValue > 100
+                                      ? "needs_improvement"
+                                      : "good",
+                        });
+                    }
                 });
             });
             fidObserver.observe({ entryTypes: ["first-input"] });

@@ -134,7 +134,7 @@ export function useCommentFocus() {
 
     const focusCommentForm = useCallback(() => {
         const textarea = document.querySelector(
-            'textarea[placeholder*="댓글"]'
+            "textarea[placeholder*=\"댓글\"]"
         ) as HTMLTextAreaElement;
         if (textarea) {
             textarea.focus();

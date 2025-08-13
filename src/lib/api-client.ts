@@ -59,8 +59,19 @@ const TOKEN_STORAGE_KEY = "epiksode_auth_token";
 const TOKEN_EXPIRES_KEY = "epiksode_auth_expires";
 
 // =============================================================================
-// 🚨 에러 처리 클래스
+// 🚨 에러 처리 클래스 및 인터페이스
 // =============================================================================
+
+/** API 에러 응답 인터페이스 */
+export interface ApiErrorResponse {
+    success: false;
+    error: {
+        code: string;
+        message: string;
+        details?: Record<string, unknown>;
+    };
+    timestamp?: string;
+}
 
 /** API 에러 클래스 */
 export class ApiClientError extends Error {
@@ -405,10 +416,10 @@ export class ApiClient {
             data: responseData,
         });
 
-        const errorResponse = responseData as { error?: { code: string; message: string }; message?: string };
+        const errorResponse = responseData as ApiErrorResponse | { error?: { code: string; message: string }; message?: string };
         const apiError = errorResponse?.error || {
             code: "UNKNOWN_ERROR",
-            message: errorResponse?.message || "알 수 없는 오류가 발생했습니다.",
+            message: ("message" in errorResponse ? errorResponse.message : undefined) || "알 수 없는 오류가 발생했습니다.",
         };
 
         // 인증 에러 시 토큰 클리어
