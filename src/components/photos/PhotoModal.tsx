@@ -115,7 +115,7 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(
                 // API 응답이 CommentListResponse 형태라고 가정
                 const commentsData = Array.isArray(response)
                     ? response
-                    : response.comments || [];
+                    : response.data || [];
                 setComments(commentsData);
             } catch (error) {
                 console.error("댓글 로드 실패:", error);
@@ -161,7 +161,7 @@ const PhotoModal: React.FC<PhotoModalProps> = memo(
                 const commentData = {
                     content: newComment,
                     photoId: photo.id,
-                    parentId: replyingTo,
+                    parentId: replyingTo ?? undefined,
                     seriesId: undefined,
                 };
 

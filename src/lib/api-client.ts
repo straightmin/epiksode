@@ -405,13 +405,10 @@ export class ApiClient {
             data: responseData,
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apiError = (responseData as any)?.error || {
+        const errorResponse = responseData as { error?: { code: string; message: string }; message?: string };
+        const apiError = errorResponse?.error || {
             code: "UNKNOWN_ERROR",
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            message:
-                (responseData as any)?.message ||
-                "알 수 없는 오류가 발생했습니다.",
+            message: errorResponse?.message || "알 수 없는 오류가 발생했습니다.",
         };
 
         // 인증 에러 시 토큰 클리어
@@ -424,7 +421,7 @@ export class ApiClient {
             response.status,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (responseData as any)?.message || apiError.message,
-            apiError.details
+            undefined // details not available in this error response format
         );
     }
 

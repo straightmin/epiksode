@@ -296,12 +296,14 @@ export class PerformanceMonitor {
             const fidObserver = new PerformanceObserver((list) => {
                 const entries = list.getEntries();
                 entries.forEach((entry) => {
+                    const eventEntry = entry as PerformanceEventTiming;
+                    const fidValue = eventEntry.processingStart - eventEntry.startTime;
                     analytics.track("web_vital_fid", {
-                        value: entry.processingStart - entry.startTime,
+                        value: fidValue,
                         threshold:
-                            entry.processingStart - entry.startTime > 300
+                            fidValue > 300
                                 ? "poor"
-                                : entry.processingStart - entry.startTime > 100
+                                : fidValue > 100
                                   ? "needs_improvement"
                                   : "good",
                     });
@@ -315,8 +317,12 @@ export class PerformanceMonitor {
                 let clsValue = 0;
 
                 entries.forEach((entry) => {
-                    if (!entry.hadRecentInput) {
-                        clsValue += entry.value;
+                    const layoutShift = entry as PerformanceEntry & {
+                        value: number;
+                        hadRecentInput: boolean;
+                    };
+                    if (!layoutShift.hadRecentInput) {
+                        clsValue += layoutShift.value;
                     }
                 });
 
@@ -341,11 +347,11 @@ export class PerformanceMonitor {
 
                 entries.forEach((entry) => {
                     if (entry.name.includes("api/")) {
+                        const resourceEntry = entry as PerformanceResourceTiming;
                         analytics.track("api_performance", {
                             url: entry.name,
-                            duration: entry.responseEnd - entry.requestStart,
-                            size: (entry as PerformanceResourceTiming)
-                                .transferSize,
+                            duration: resourceEntry.responseEnd - resourceEntry.requestStart,
+                            size: resourceEntry.transferSize,
                         });
                     }
                 });

@@ -2,7 +2,7 @@
  * usePerformanceOptimization - Performance optimization utilities for comments
  */
 
-import { useCallback, useMemo, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { CommentDetail } from "@/types";
 
 interface UsePerformanceOptimizationOptions {
@@ -20,9 +20,9 @@ export function usePerformanceOptimization({
     throttleInterval = 100,
 }: UsePerformanceOptimizationOptions = {}) {
     // Refs for debounce and throttle
-    const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+    const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const throttleLastCallRef = useRef<number>(0);
-    const throttleTimeoutRef = useRef<NodeJS.Timeout>();
+    const throttleTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     // Debounce function
     const debounce = useCallback(
@@ -102,7 +102,7 @@ export function usePerformanceOptimization({
     }, []);
 
     // Intersection Observer refs and state
-    const observerRef = useRef<IntersectionObserver>();
+    const observerRef = useRef<IntersectionObserver | undefined>(undefined);
     const elementsRef = useRef<Set<Element>>(new Set());
 
     // Create intersection observer

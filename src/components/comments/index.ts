@@ -94,6 +94,10 @@ export {
 // 🚀 Quick Start Exports (Convenience)
 // =============================================================================
 
+// Import for local re-exports
+import { CommentList } from "./CommentList";
+import { CommentForm } from "./CommentForm";
+
 /**
  * All-in-one comment system for photo pages
  * Usage: <PhotoComments photoId={123} />

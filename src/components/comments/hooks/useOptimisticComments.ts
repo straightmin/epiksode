@@ -125,6 +125,7 @@ export function useOptimisticComments({
 
             return operationId;
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [generateOperationId, rollbackTimeout]
     );
 

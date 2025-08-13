@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState, memo, useMemo, useCallback } from "react";
+import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { CommentDetail } from "@/types";
@@ -19,11 +20,7 @@ interface CommentItemProps {
     comment: CommentDetail;
     onUpdate?: (comment: CommentDetail) => void;
     onDelete?: (commentId: number) => void;
-    onError?: (
-        error: Error,
-        operation: string,
-        originalComment?: CommentDetail
-    ) => void;
+    onError?: (error: Error, operation?: string) => void;
     level?: number; // For nested comment styling
     className?: string;
 }
@@ -48,7 +45,7 @@ export const CommentItem = memo(function CommentItem({
     const { toggleLike, deleteComment, createReply, loading } =
         useCommentActions({
             onSuccess: (operation, result) => {
-                if (operation === "like" && onUpdate) {
+                if (operation === "like" && onUpdate && result) {
                     onUpdate(result);
                 } else if (operation === "delete" && onDelete) {
                     onDelete(comment.id);
@@ -75,11 +72,11 @@ export const CommentItem = memo(function CommentItem({
         try {
             await deleteComment(comment.id);
         } catch (error) {
-            onError?.(error as Error, "delete", comment);
+            onError?.(error as Error, "delete");
         } finally {
             setIsDeleting(false);
         }
-    }, [comment.id, deleteComment, onError, comment]);
+    }, [deleteComment, onError, comment]);
 
     // Handle like toggle - memoized to prevent unnecessary re-renders
     const handleLikeToggle = useCallback(async () => {
@@ -90,16 +87,9 @@ export const CommentItem = memo(function CommentItem({
                 seriesId: comment.seriesId,
             });
         } catch (error) {
-            onError?.(error as Error, "like", comment);
+            onError?.(error as Error, "like");
         }
-    }, [
-        toggleLike,
-        comment.id,
-        comment.photoId,
-        comment.seriesId,
-        onError,
-        comment,
-    ]);
+    }, [toggleLike, onError, comment]);
 
     // Handle reply creation - memoized to prevent unnecessary re-renders
     const handleReplySubmit = useCallback(
@@ -107,8 +97,8 @@ export const CommentItem = memo(function CommentItem({
             try {
                 const newReply = await createReply({
                     content,
-                    photoId: comment.photoId,
-                    seriesId: comment.seriesId,
+                    photoId: comment.photoId ?? undefined,
+                    seriesId: comment.seriesId ?? undefined,
                     parentId: comment.id,
                 });
 
@@ -123,7 +113,7 @@ export const CommentItem = memo(function CommentItem({
                 setShowReplyForm(false);
                 setShowReplies(true);
             } catch (error) {
-                onError?.(error as Error, "reply", comment);
+                onError?.(error as Error, "reply");
             }
         },
         [createReply, comment, onUpdate, onError]
@@ -152,9 +142,11 @@ export const CommentItem = memo(function CommentItem({
                 {/* Avatar */}
                 <Avatar className="w-8 h-8 flex-shrink-0">
                     {comment.author.profileImageUrl ? (
-                        <img
+                        <Image
                             src={comment.author.profileImageUrl}
                             alt={comment.author.username}
+                            width={32}
+                            height={32}
                             className="w-full h-full object-cover"
                         />
                     ) : (

@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommentDetail, CreateCommentRequest } from "@/types";
 import { useCommentActions } from "./hooks/useCommentActions";
@@ -173,9 +174,11 @@ export function CommentForm({
                 {/* User Avatar */}
                 <div className="w-8 h-8 flex-shrink-0">
                     {user.profileImageUrl ? (
-                        <img
+                        <Image
                             src={user.profileImageUrl}
                             alt={user.username}
+                            width={32}
+                            height={32}
                             className="w-full h-full rounded-full object-cover"
                         />
                     ) : (

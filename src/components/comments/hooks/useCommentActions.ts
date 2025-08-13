@@ -8,6 +8,7 @@ import {
     CommentDetail,
     CreateCommentRequest,
     ToggleLikeRequest,
+    createID,
 } from "@/types";
 import { apiClient } from "@/lib/api-client";
 
@@ -88,7 +89,9 @@ export function useCommentActions({
     // Update an existing comment (for future use)
     const updateComment = useCallback(
         async (
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             _id: number,
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             _data: Partial<CommentDetail>
         ): Promise<CommentDetail> => {
             return executeAction("update", async () => {
@@ -134,14 +137,14 @@ export function useCommentActions({
                 // we need to create a mock updated comment for optimistic updates
                 // In a real app, you'd want the API to return the updated comment
                 const mockUpdatedComment: CommentDetail = {
-                    id: data.commentId,
+                    id: createID(data.commentId),
                     userId: 0, // Will be filled by optimistic update logic
                     content: "", // Will be filled by optimistic update logic
-                    photoId: data.photoId,
-                    seriesId: data.seriesId,
+                    photoId: data.photoId ?? null,
+                    seriesId: data.seriesId ?? null,
                     parentId: null,
                     author: {
-                        id: 0,
+                        id: createID(0),
                         username: "",
                         bio: null,
                         profileImageUrl: null,

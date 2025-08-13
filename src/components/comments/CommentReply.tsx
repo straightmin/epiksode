@@ -57,8 +57,8 @@ export function CommentReply({
 
             {/* Reply Form */}
             <CommentForm
-                photoId={parentComment.photoId}
-                seriesId={parentComment.seriesId}
+                photoId={parentComment.photoId ?? undefined}
+                seriesId={parentComment.seriesId ?? undefined}
                 parentId={parentComment.id}
                 placeholder={`${parentComment.author.username}님에게 답글...`}
                 onCommentCreated={handleCommentCreated}
