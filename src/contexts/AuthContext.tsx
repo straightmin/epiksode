@@ -1,15 +1,22 @@
 /**
  * 인증 컨텍스트
- * 
+ *
  * JWT 기반 사용자 인증 상태를 전역적으로 관리
  * 로그인, 로그아웃, 사용자 정보 등을 제공
  */
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { apiClient, ApiClientError, getErrorMessage } from '@/lib/api-client';
-import { User, LoginRequest, RegisterRequest } from '@/types';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useCallback,
+    ReactNode,
+} from "react";
+import { apiClient, ApiClientError, getErrorMessage } from "@/lib/api-client";
+import { User, LoginRequest, RegisterRequest } from "@/types";
 
 // =============================================================================
 // 🔧 타입 정의
@@ -40,7 +47,11 @@ interface AuthActions {
     /** 에러 클리어 */
     clearError: () => void;
     /** 프로필 업데이트 */
-    updateProfile: (updates: { username?: string; bio?: string; profileImageUrl?: string }) => Promise<boolean>;
+    updateProfile: (updates: {
+        username?: string;
+        bio?: string;
+        profileImageUrl?: string;
+    }) => Promise<boolean>;
 }
 
 /** 전체 컨텍스트 타입 */
@@ -75,10 +86,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     /** 에러 처리 헬퍼 */
     const handleError = useCallback((error: unknown) => {
-        console.error('Auth Error:', error);
+        console.error("Auth Error:", error);
         const message = getErrorMessage(error);
         setError(message);
-        
+
         // 인증 에러인 경우 사용자 정보 클리어
         if (error instanceof ApiClientError && error.isAuthError) {
             setUser(null);
@@ -87,57 +98,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, []);
 
     /** 로딩 상태 관리 헬퍼 */
-    const withLoading = useCallback(async <T,>(
-        asyncFn: () => Promise<T>
-    ): Promise<T | null> => {
-        setIsLoading(true);
-        setError(null);
-        
-        try {
-            const result = await asyncFn();
-            return result;
-        } catch (error) {
-            handleError(error);
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [handleError]);
+    const withLoading = useCallback(
+        async <T,>(asyncFn: () => Promise<T>): Promise<T | null> => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const result = await asyncFn();
+                return result;
+            } catch (error) {
+                handleError(error);
+                return null;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [handleError]
+    );
 
     // =============================================================================
     // 📤 공개 액션들
     // =============================================================================
 
     /** 로그인 */
-    const login = useCallback(async (credentials: LoginRequest): Promise<boolean> => {
-        const result = await withLoading(async () => {
-            const response = await apiClient.login(credentials);
-            setUser(response.user);
-            return response;
-        });
+    const login = useCallback(
+        async (credentials: LoginRequest): Promise<boolean> => {
+            const result = await withLoading(async () => {
+                const response = await apiClient.login(credentials);
+                setUser(response.user);
+                return response;
+            });
 
-        return !!result;
-    }, [withLoading]);
+            return !!result;
+        },
+        [withLoading]
+    );
 
     /** 회원가입 */
-    const register = useCallback(async (userData: RegisterRequest): Promise<boolean> => {
-        const result = await withLoading(async () => {
-            const response = await apiClient.register(userData);
-            setUser(response.user);
-            return response;
-        });
+    const register = useCallback(
+        async (userData: RegisterRequest): Promise<boolean> => {
+            const result = await withLoading(async () => {
+                const response = await apiClient.register(userData);
+                setUser(response.user);
+                return response;
+            });
 
-        return !!result;
-    }, [withLoading]);
+            return !!result;
+        },
+        [withLoading]
+    );
 
     /** 로그아웃 */
     const logout = useCallback(async (): Promise<void> => {
         setIsLoading(true);
-        
+
         try {
             await apiClient.logout();
         } catch (error) {
-            console.warn('Logout error (continuing anyway):', error);
+            console.warn("Logout error (continuing anyway):", error);
         } finally {
             setUser(null);
             apiClient.clearToken();
@@ -163,19 +181,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, [withLoading]);
 
     /** 프로필 업데이트 */
-    const updateProfile = useCallback(async (updates: {
-        username?: string;
-        bio?: string;
-        profileImageUrl?: string;
-    }): Promise<boolean> => {
-        const result = await withLoading(async () => {
-            const updatedUser = await apiClient.updateProfile(updates);
-            setUser(updatedUser);
-            return updatedUser;
-        });
+    const updateProfile = useCallback(
+        async (updates: {
+            username?: string;
+            bio?: string;
+            profileImageUrl?: string;
+        }): Promise<boolean> => {
+            const result = await withLoading(async () => {
+                const updatedUser = await apiClient.updateProfile(updates);
+                setUser(updatedUser);
+                return updatedUser;
+            });
 
-        return !!result;
-    }, [withLoading]);
+            return !!result;
+        },
+        [withLoading]
+    );
 
     /** 에러 클리어 */
     const clearError = useCallback(() => {
@@ -193,7 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (apiClient.isAuthenticated()) {
                 setIsLoading(true);
                 setError(null);
-                
+
                 try {
                     const currentUser = await apiClient.getCurrentUser();
                     setUser(currentUser);
@@ -215,15 +236,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useEffect(() => {
         const checkTokenExpiry = () => {
             if (user && !apiClient.isAuthenticated()) {
-                console.log('Token expired, logging out...');
+                console.log("Token expired, logging out...");
                 setUser(null);
-                setError('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                setError("로그인이 만료되었습니다. 다시 로그인해주세요.");
             }
         };
 
         // 1분마다 토큰 만료 확인
         const interval = setInterval(checkTokenExpiry, 60 * 1000);
-        
+
         return () => clearInterval(interval);
     }, [user]);
 
@@ -231,10 +252,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useEffect(() => {
         const handleOnline = async () => {
             if (isAuthenticated && !isLoading && apiClient.isAuthenticated()) {
-                console.log('Network reconnected, refreshing user...');
+                console.log("Network reconnected, refreshing user...");
                 setIsLoading(true);
                 setError(null);
-                
+
                 try {
                     const currentUser = await apiClient.getCurrentUser();
                     setUser(currentUser);
@@ -246,8 +267,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
         };
 
-        window.addEventListener('online', handleOnline);
-        return () => window.removeEventListener('online', handleOnline);
+        window.addEventListener("online", handleOnline);
+        return () => window.removeEventListener("online", handleOnline);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, isLoading]); // Removed refreshUser from dependencies
 
@@ -261,7 +282,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated,
         isLoading,
         error,
-        
+
         // Actions
         login,
         register,
@@ -285,25 +306,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 /** 인증 컨텍스트 사용 훅 */
 export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
-    
+
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
-    
+
     return context;
 };
 
 /** 인증 필요 여부 확인 훅 */
 export const useRequireAuth = (): AuthContextType => {
     const auth = useAuth();
-    
+
     useEffect(() => {
         if (!auth.isLoading && !auth.isAuthenticated) {
-            console.warn('Authentication required but user is not logged in');
+            console.warn("Authentication required but user is not logged in");
             // 여기에 리다이렉트 로직 추가 가능
         }
     }, [auth.isLoading, auth.isAuthenticated]);
-    
+
     return auth;
 };
 
@@ -324,9 +345,7 @@ export const useIsAuthenticated = (): boolean => {
 // =============================================================================
 
 /** 인증이 필요한 컴포넌트를 래핑하는 HOC */
-export function withAuth<P extends object>(
-    Component: React.ComponentType<P>
-) {
+export function withAuth<P extends object>(Component: React.ComponentType<P>) {
     const AuthenticatedComponent = (props: P) => {
         const { isAuthenticated, isLoading, error } = useAuth();
 
@@ -344,8 +363,12 @@ export function withAuth<P extends object>(
             return (
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="text-center">
-                        <h2 className="text-xl font-bold mb-2">로그인이 필요합니다</h2>
-                        <p className="text-gray-600">이 페이지에 접근하려면 로그인해주세요.</p>
+                        <h2 className="text-xl font-bold mb-2">
+                            로그인이 필요합니다
+                        </h2>
+                        <p className="text-gray-600">
+                            이 페이지에 접근하려면 로그인해주세요.
+                        </p>
                         {error && (
                             <p className="text-red-500 text-sm mt-2">{error}</p>
                         )}
@@ -359,7 +382,7 @@ export function withAuth<P extends object>(
     };
 
     AuthenticatedComponent.displayName = `withAuth(${Component.displayName || Component.name})`;
-    
+
     return AuthenticatedComponent;
 }
 

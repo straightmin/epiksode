@@ -3,11 +3,11 @@
  * Specialized form for creating replies to existing comments
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { CommentForm } from './CommentForm';
-import { CommentDetail } from '@/types';
+import React from "react";
+import { CommentForm } from "./CommentForm";
+import { CommentDetail } from "@/types";
 
 interface CommentReplyProps {
     parentComment: CommentDetail;
@@ -25,14 +25,14 @@ export function CommentReply({
     onSubmit,
     onCancel,
     autoFocus = false,
-    className = ''
+    className = "",
 }: CommentReplyProps) {
     const handleCommentCreated = async (comment: CommentDetail) => {
         await onSubmit(comment.content);
     };
 
     const handleError = (error: Error) => {
-        console.error('Reply creation failed:', error);
+        console.error("Reply creation failed:", error);
         // Could show toast notification here
     };
 
@@ -41,12 +41,17 @@ export function CommentReply({
             {/* Reply Context */}
             <div className="mb-3 pb-2 border-b border-gray-200">
                 <p className="text-xs text-gray-500">
-                    <span className="font-medium">{parentComment.author.username}</span>님에게 답글
+                    <span className="font-medium">
+                        {parentComment.author.username}
+                    </span>
+                    님에게 답글
                 </p>
                 <p className="text-sm text-gray-600 mt-1 truncate">
-                    "{parentComment.content.length > 50 
-                        ? `${parentComment.content.slice(0, 50)}...` 
-                        : parentComment.content}"
+                    &ldquo;
+                    {parentComment.content.length > 50
+                        ? `${parentComment.content.slice(0, 50)}...`
+                        : parentComment.content}
+                    &rdquo;
                 </p>
             </div>
 

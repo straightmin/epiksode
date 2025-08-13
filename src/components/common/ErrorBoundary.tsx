@@ -1,14 +1,14 @@
 /**
  * ErrorBoundary 컴포넌트
- * 
+ *
  * React 에러 바운더리를 활용한 이미지 로딩 에러 처리
  * S3 프록시 관련 에러 포함 전체 애플리케이션 에러 처리
  */
 
-'use client';
+"use client";
 
-import React, { Component, ReactNode } from 'react';
-import { AlertCircle, RefreshCcw } from 'lucide-react';
+import React, { Component, ReactNode } from "react";
+import { AlertCircle, RefreshCcw } from "lucide-react";
 
 interface ErrorInfo {
     componentStack: string;
@@ -36,7 +36,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
     constructor(props: ErrorBoundaryProps) {
         super(props);
-        
+
         this.state = {
             hasError: false,
             error: null,
@@ -55,7 +55,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         const eventId = Math.random().toString(36).substring(7);
-        
+
         this.setState({
             errorInfo,
             eventId,
@@ -65,31 +65,39 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         this.props.onError?.(error, errorInfo);
 
         // 개발 환경에서 에러 로깅
-        if (process.env.NODE_ENV === 'development') {
-            console.group('🚨 ErrorBoundary 에러 감지');
-            console.error('Error:', error);
-            console.error('Error Info:', errorInfo);
-            console.error('Component Stack:', errorInfo.componentStack);
+        if (process.env.NODE_ENV === "development") {
+            console.group("🚨 ErrorBoundary 에러 감지");
+            console.error("Error:", error);
+            console.error("Error Info:", errorInfo);
+            console.error("Component Stack:", errorInfo.componentStack);
             console.groupEnd();
         }
 
         // 이미지 관련 에러 특별 처리
         if (this.isImageError(error)) {
-            console.warn('이미지 로딩 에러 감지:', error.message);
+            console.warn("이미지 로딩 에러 감지:", error.message);
         }
     }
 
     componentDidUpdate(prevProps: ErrorBoundaryProps) {
         const { resetKeys, resetOnPropsChange } = this.props;
         const { hasError } = this.state;
-        
+
         if (hasError && prevProps.resetKeys !== resetKeys) {
-            if (resetKeys?.some((resetKey, idx) => prevProps.resetKeys?.[idx] !== resetKey)) {
+            if (
+                resetKeys?.some(
+                    (resetKey, idx) => prevProps.resetKeys?.[idx] !== resetKey
+                )
+            ) {
                 this.resetErrorBoundary();
             }
         }
 
-        if (hasError && resetOnPropsChange && prevProps.children !== this.props.children) {
+        if (
+            hasError &&
+            resetOnPropsChange &&
+            prevProps.children !== this.props.children
+        ) {
             this.resetErrorBoundary();
         }
     }
@@ -102,22 +110,24 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
     isImageError = (error: Error): boolean => {
         const imageErrorKeywords = [
-            'image',
-            'img',
-            '이미지',
-            'load',
-            '로드',
-            'fetch',
-            'proxy',
-            'thumbnail',
-            's3',
-            '403',
-            '404',
-            '500'
+            "image",
+            "img",
+            "이미지",
+            "load",
+            "로드",
+            "fetch",
+            "proxy",
+            "thumbnail",
+            "s3",
+            "403",
+            "404",
+            "500",
         ];
 
         const errorMessage = error.message.toLowerCase();
-        return imageErrorKeywords.some(keyword => errorMessage.includes(keyword));
+        return imageErrorKeywords.some((keyword) =>
+            errorMessage.includes(keyword)
+        );
     };
 
     resetErrorBoundary = () => {
@@ -172,23 +182,27 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                         문제가 발생했습니다
                     </h2>
                     <p className="text-sm text-red-600 text-center mb-4 max-w-md">
-                        예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+                        예상치 못한 오류가 발생했습니다. 잠시 후 다시
+                        시도해주세요.
                     </p>
-                    
+
                     {/* 개발 환경에서만 에러 상세 정보 표시 */}
-                    {process.env.NODE_ENV === 'development' && error && (
+                    {process.env.NODE_ENV === "development" && error && (
                         <details className="w-full max-w-2xl mb-4">
                             <summary className="cursor-pointer text-sm text-red-700 hover:text-red-900">
                                 에러 상세 정보 (개발 모드)
                             </summary>
                             <div className="mt-2 p-3 bg-red-100 rounded text-xs font-mono text-red-800 overflow-auto">
                                 <div className="mb-2">
-                                    <strong>에러:</strong> {error.name}: {error.message}
+                                    <strong>에러:</strong> {error.name}:{" "}
+                                    {error.message}
                                 </div>
                                 {error.stack && (
                                     <div>
                                         <strong>스택 트레이스:</strong>
-                                        <pre className="whitespace-pre-wrap">{error.stack}</pre>
+                                        <pre className="whitespace-pre-wrap">
+                                            {error.stack}
+                                        </pre>
                                     </div>
                                 )}
                             </div>
@@ -203,7 +217,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                             <RefreshCcw size={16} />
                             다시 시도
                         </button>
-                        
+
                         <button
                             onClick={() => window.location.reload()}
                             className="px-4 py-2 bg-white text-red-600 border border-red-600 rounded-md hover:bg-red-50 transition-colors"
@@ -237,9 +251,13 @@ export const ImageErrorBoundary: React.FC<{
         fallback={
             <div className="flex flex-col items-center justify-center p-4 min-h-[150px] bg-gray-50 rounded-lg">
                 <AlertCircle className="w-6 h-6 text-gray-400 mb-2" />
-                <p className="text-xs text-gray-500">이미지를 불러올 수 없습니다</p>
+                <p className="text-xs text-gray-500">
+                    이미지를 불러올 수 없습니다
+                </p>
                 {photoId && (
-                    <p className="text-xs text-gray-400 mt-1">Photo ID: {photoId}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                        Photo ID: {photoId}
+                    </p>
                 )}
             </div>
         }
@@ -258,7 +276,7 @@ export const ImageErrorBoundary: React.FC<{
  */
 export function withErrorBoundary<P extends object>(
     Component: React.ComponentType<P>,
-    errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
+    errorBoundaryProps?: Omit<ErrorBoundaryProps, "children">
 ) {
     const WrappedComponent = (props: P) => (
         <ErrorBoundary {...errorBoundaryProps}>
@@ -267,6 +285,6 @@ export function withErrorBoundary<P extends object>(
     );
 
     WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-    
+
     return WrappedComponent;
 }

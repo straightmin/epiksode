@@ -14,12 +14,16 @@ interface UserCardProps {
 /**
  * 사용자 정보를 표시하는 재사용 가능한 카드 컴포넌트
  */
-const UserCard: React.FC<UserCardProps> = ({ user, onClick, className = "" }) => {
+const UserCard: React.FC<UserCardProps> = ({
+    user,
+    onClick,
+    className = "",
+}) => {
     const { theme, isDark } = useThemeContext();
 
     return (
-        <div 
-            className={`flex items-center gap-4 p-4 rounded-lg border transition-colors hover:shadow-md ${onClick ? 'cursor-pointer' : ''} ${className}`}
+        <div
+            className={`flex items-center gap-4 p-4 rounded-lg border transition-colors hover:shadow-md ${onClick ? "cursor-pointer" : ""} ${className}`}
             style={{
                 backgroundColor: isDark
                     ? theme.theme.colors.background.dark
@@ -30,14 +34,14 @@ const UserCard: React.FC<UserCardProps> = ({ user, onClick, className = "" }) =>
             }}
             onClick={onClick}
         >
-            <div 
+            <div
                 className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0"
                 style={{
-                    backgroundImage: user.profileImageUrl 
-                        ? `url(${user.profileImageUrl})` 
+                    backgroundImage: user.profileImageUrl
+                        ? `url(${user.profileImageUrl})`
                         : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                 }}
             >
                 {!user.profileImageUrl && (
@@ -47,7 +51,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, onClick, className = "" }) =>
                 )}
             </div>
             <div className="flex-1">
-                <h3 
+                <h3
                     className="font-semibold"
                     style={{
                         color: isDark
@@ -58,7 +62,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, onClick, className = "" }) =>
                     {user.username}
                 </h3>
                 {user.bio && (
-                    <p 
+                    <p
                         className="text-sm mt-1"
                         style={{
                             color: isDark

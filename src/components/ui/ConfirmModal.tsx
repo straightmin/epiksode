@@ -1,6 +1,6 @@
 /**
  * 확인 모달 컴포넌트
- * 
+ *
  * window.confirm 대신 사용하는 커스텀 확인 모달
  */
 
@@ -22,7 +22,7 @@ interface ConfirmModalProps {
     /** 취소 버튼 텍스트 */
     cancelText?: string;
     /** 확인 액션 타입 (기본: info, 위험한 액션: danger) */
-    variant?: 'info' | 'danger';
+    variant?: "info" | "danger";
     /** 확인 버튼 클릭 핸들러 */
     onConfirm: () => void;
     /** 취소 버튼 클릭 핸들러 */
@@ -35,15 +35,15 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     message,
     confirmText = "확인",
     cancelText = "취소",
-    variant = 'info',
+    variant = "info",
     onConfirm,
-    onCancel
+    onCancel,
 }) => {
     const { theme, isDark } = useThemeContext();
 
     if (!isOpen) return null;
 
-    const isDangerVariant = variant === 'danger';
+    const isDangerVariant = variant === "danger";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -52,7 +52,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={onCancel}
             />
-            
+
             {/* 모달 */}
             <div
                 className="relative w-full max-w-md mx-4 p-6 rounded-2xl shadow-xl"
@@ -81,7 +81,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         className="w-16 h-16 rounded-full flex items-center justify-center"
                         style={{
                             backgroundColor: isDangerVariant
-                                ? theme.theme.colors.accent.pink + '20'
+                                ? theme.theme.colors.accent.pink + "20"
                                 : theme.theme.colors.primary.purpleVeryLight,
                         }}
                     >
@@ -127,7 +127,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         onClick={onCancel}
                         className="flex-1 py-3 px-4 rounded-full font-medium border transition-all duration-300 hover:scale-105"
                         style={{
-                            backgroundColor: 'transparent',
+                            backgroundColor: "transparent",
                             borderColor: isDark
                                 ? theme.theme.colors.primary.darkGray
                                 : theme.theme.colors.primary.purpleVeryLight,
@@ -160,7 +160,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
 /**
  * 확인 모달 훅
- * 
+ *
  * Promise 기반으로 확인/취소 결과를 반환하는 훅
  */
 interface ConfirmModalState {
@@ -169,55 +169,61 @@ interface ConfirmModalState {
     message: string;
     confirmText?: string;
     cancelText?: string;
-    variant?: 'info' | 'danger';
+    variant?: "info" | "danger";
     resolver?: (result: boolean) => void;
 }
 
 export const useConfirmModal = () => {
     const [modalState, setModalState] = React.useState<ConfirmModalState>({
         isOpen: false,
-        title: '',
-        message: ''
+        title: "",
+        message: "",
     });
 
-    const confirm = React.useCallback((options: {
-        title: string;
-        message: string;
-        confirmText?: string;
-        cancelText?: string;
-        variant?: 'info' | 'danger';
-    }): Promise<boolean> => {
-        return new Promise((resolve) => {
-            setModalState({
-                ...options,
-                isOpen: true,
-                resolver: resolve
+    const confirm = React.useCallback(
+        (options: {
+            title: string;
+            message: string;
+            confirmText?: string;
+            cancelText?: string;
+            variant?: "info" | "danger";
+        }): Promise<boolean> => {
+            return new Promise((resolve) => {
+                setModalState({
+                    ...options,
+                    isOpen: true,
+                    resolver: resolve,
+                });
             });
-        });
-    }, []);
+        },
+        []
+    );
 
     const handleConfirm = React.useCallback(() => {
         modalState.resolver?.(true);
-        setModalState(prev => ({ ...prev, isOpen: false }));
+        setModalState((prev) => ({ ...prev, isOpen: false }));
     }, [modalState]);
 
     const handleCancel = React.useCallback(() => {
         modalState.resolver?.(false);
-        setModalState(prev => ({ ...prev, isOpen: false }));
+        setModalState((prev) => ({ ...prev, isOpen: false }));
     }, [modalState]);
 
-    const modal = React.useMemo(() => (
-        <ConfirmModal
-            isOpen={modalState.isOpen}
-            title={modalState.title}
-            message={modalState.message}
-            confirmText={modalState.confirmText}
-            cancelText={modalState.cancelText}
-            variant={modalState.variant}
-            onConfirm={handleConfirm}
-            onCancel={handleCancel}
-        />
-    ), [modalState, handleConfirm, handleCancel]);
+    const modal = React.useMemo(
+        () => (
+            <ConfirmModal
+                isOpen={modalState.isOpen}
+                title={modalState.title}
+                message={modalState.message}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                variant={modalState.variant}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+            />
+        ),
+        [modalState, handleConfirm, handleCancel]
+    );
 
     return { confirm, modal };
 };

@@ -4,14 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useThemeContext } from "../../../frontend-theme-system/components/ThemeProvider";
-import {
-    Home,
-    Search,
-    Upload,
-    Settings,
-    Menu,
-    X,
-} from "lucide-react";
+import { Home, Search, Upload, Settings, Menu, X } from "lucide-react";
 
 // 네비게이션 메뉴 아이템 타입 정의
 interface NavigationItem {
@@ -92,8 +85,8 @@ const Sidebar: React.FC = () => {
                     color: isActive
                         ? theme.theme.colors.primary.purple
                         : isDark
-                        ? theme.theme.colors.primary.white
-                        : theme.theme.colors.primary.black,
+                          ? theme.theme.colors.primary.white
+                          : theme.theme.colors.primary.black,
                 }}
                 onMouseEnter={(e) => {
                     if (!isActive) {
@@ -187,7 +180,7 @@ const Sidebar: React.FC = () => {
             >
                 <div className="h-full flex flex-col">
                     {/* Logo */}
-                    <div 
+                    <div
                         className="p-6 border-b border-opacity-20"
                         style={{
                             borderColor: isDark
@@ -203,7 +196,8 @@ const Sidebar: React.FC = () => {
                             <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold"
                                 style={{
-                                    background: theme.theme.colors.background.gradient,
+                                    background:
+                                        theme.theme.colors.background.gradient,
                                     color: theme.theme.colors.primary.white,
                                 }}
                             >
@@ -224,7 +218,8 @@ const Sidebar: React.FC = () => {
                                     style={{
                                         color: isDark
                                             ? theme.theme.colors.primary.gray
-                                            : theme.theme.colors.primary.darkGray,
+                                            : theme.theme.colors.primary
+                                                  .darkGray,
                                     }}
                                 >
                                     {section.title}
@@ -308,8 +303,8 @@ const Sidebar: React.FC = () => {
                                     color: isActive
                                         ? theme.theme.colors.primary.purple
                                         : isDark
-                                        ? theme.theme.colors.primary.white
-                                        : theme.theme.colors.primary.black,
+                                          ? theme.theme.colors.primary.white
+                                          : theme.theme.colors.primary.black,
                                 }}
                             >
                                 <IconComponent size={20} />
