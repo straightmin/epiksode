@@ -1,9 +1,9 @@
 {
-  "success": true,
-  "message": "좋아요를 추가했습니다.",
-  "data": {
-    "isLiked": true,
-    "likesCount": 43,
-    "message": "좋아요를 추가했습니다."
-  }
+    "success": true,
+    "message": "좋아요를 추가했습니다.",
+    "data": {
+        "isLiked": true,
+        "likesCount": 43,
+        "message": "좋아요를 추가했습니다."
+    }
 }

@@ -3,23 +3,24 @@
  * Handles comment display, interactions (like, reply, delete), and nested replies
  */
 
-'use client';
+"use client";
 
-import React, { useState, memo, useMemo, useCallback } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { CommentDetail } from '@/types';
-import { CommentReply } from './CommentReply';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCommentActions } from './hooks/useCommentActions';
-import { Avatar } from '@/components/ui/avatar';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import React, { useState, memo, useMemo, useCallback } from "react";
+import Image from "next/image";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
+import { CommentDetail } from "@/types";
+import { CommentReply } from "./CommentReply";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCommentActions } from "./hooks/useCommentActions";
+import { Avatar } from "@/components/ui/avatar";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface CommentItemProps {
     comment: CommentDetail;
     onUpdate?: (comment: CommentDetail) => void;
     onDelete?: (commentId: number) => void;
-    onError?: (error: Error, operation: string, originalComment?: CommentDetail) => void;
+    onError?: (error: Error, operation?: string) => void;
     level?: number; // For nested comment styling
     className?: string;
 }
@@ -34,40 +35,36 @@ export const CommentItem = memo(function CommentItem({
     onDelete,
     onError,
     level = 0,
-    className = ''
+    className = "",
 }: CommentItemProps) {
     const { user } = useAuth();
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const {
-        toggleLike,
-        deleteComment,
-        createReply,
-        loading
-    } = useCommentActions({
-        onSuccess: (operation, result) => {
-            if (operation === 'like' && onUpdate) {
-                onUpdate(result);
-            } else if (operation === 'delete' && onDelete) {
-                onDelete(comment.id);
-            }
-        },
-        onError
-    });
+    const { toggleLike, deleteComment, createReply, loading } =
+        useCommentActions({
+            onSuccess: (operation, result) => {
+                if (operation === "like" && onUpdate && result) {
+                    onUpdate(result);
+                } else if (operation === "delete" && onDelete) {
+                    onDelete(comment.id);
+                }
+            },
+            onError,
+        });
 
     // Format comment creation time - memoized for performance
     const timeAgo = useMemo(() => {
         return formatDistanceToNow(new Date(comment.createdAt), {
             addSuffix: true,
-            locale: ko
+            locale: ko,
         });
     }, [comment.createdAt]);
 
     // Handle comment deletion - memoized to prevent unnecessary re-renders
     const handleDelete = useCallback(async () => {
-        if (!window.confirm('이 댓글을 삭제하시겠습니까?')) {
+        if (!window.confirm("이 댓글을 삭제하시겠습니까?")) {
             return;
         }
 
@@ -75,11 +72,11 @@ export const CommentItem = memo(function CommentItem({
         try {
             await deleteComment(comment.id);
         } catch (error) {
-            onError?.(error as Error, 'delete', comment);
+            onError?.(error as Error, "delete");
         } finally {
             setIsDeleting(false);
         }
-    }, [comment.id, deleteComment, onError, comment]);
+    }, [deleteComment, onError, comment]);
 
     // Handle like toggle - memoized to prevent unnecessary re-renders
     const handleLikeToggle = useCallback(async () => {
@@ -87,64 +84,74 @@ export const CommentItem = memo(function CommentItem({
             await toggleLike({
                 commentId: comment.id,
                 photoId: comment.photoId,
-                seriesId: comment.seriesId
+                seriesId: comment.seriesId,
             });
         } catch (error) {
-            onError?.(error as Error, 'like', comment);
+            onError?.(error as Error, "like");
         }
-    }, [toggleLike, comment.id, comment.photoId, comment.seriesId, onError, comment]);
+    }, [toggleLike, onError, comment]);
 
     // Handle reply creation - memoized to prevent unnecessary re-renders
-    const handleReplySubmit = useCallback(async (content: string) => {
-        try {
-            const newReply = await createReply({
-                content,
-                photoId: comment.photoId,
-                seriesId: comment.seriesId,
-                parentId: comment.id
-            });
+    const handleReplySubmit = useCallback(
+        async (content: string) => {
+            try {
+                const newReply = await createReply({
+                    content,
+                    photoId: comment.photoId ?? undefined,
+                    seriesId: comment.seriesId ?? undefined,
+                    parentId: comment.id,
+                });
 
-            // Add reply to the comment
-            const updatedComment = {
-                ...comment,
-                repliesCount: comment.repliesCount + 1,
-                replies: [...(comment.replies || []), newReply]
-            };
+                // Add reply to the comment
+                const updatedComment = {
+                    ...comment,
+                    repliesCount: comment.repliesCount + 1,
+                    replies: [...(comment.replies || []), newReply],
+                };
 
-            onUpdate?.(updatedComment);
-            setShowReplyForm(false);
-            setShowReplies(true);
-        } catch (error) {
-            onError?.(error as Error, 'reply', comment);
-        }
-    }, [createReply, comment, onUpdate, onError]);
+                onUpdate?.(updatedComment);
+                setShowReplyForm(false);
+                setShowReplies(true);
+            } catch (error) {
+                onError?.(error as Error, "reply");
+            }
+        },
+        [createReply, comment, onUpdate, onError]
+    );
 
     // Memoize permission checks to prevent unnecessary recalculations
-    const { isOwner, canDelete, canReply } = useMemo(() => ({
-        isOwner: user && comment.author.id === user.id,
-        canDelete: user && comment.author.id === user.id,
-        canReply: user && comment.photoId // Only allow replies on photo comments for now
-    }), [user, comment.author.id, comment.photoId]);
+    const { isOwner, canDelete, canReply } = useMemo(
+        () => ({
+            isOwner: user && comment.author.id === user.id,
+            canDelete: user && comment.author.id === user.id,
+            canReply: user && comment.photoId, // Only allow replies on photo comments for now
+        }),
+        [user, comment.author.id, comment.photoId]
+    );
 
     return (
-        <div className={`
+        <div
+            className={`
             ${className} 
-            ${level > 0 ? 'ml-4 sm:ml-8 border-l-2 border-gray-100 pl-2 sm:pl-4' : ''}
+            ${level > 0 ? "ml-4 sm:ml-8 border-l-2 border-gray-100 pl-2 sm:pl-4" : ""}
             transform transition-all duration-200 ease-in-out
             hover:bg-gray-50 hover:bg-opacity-50 rounded-lg p-2 -m-2
-        `}>
+        `}
+        >
             <div className="flex space-x-3">
                 {/* Avatar */}
                 <Avatar className="w-8 h-8 flex-shrink-0">
                     {comment.author.profileImageUrl ? (
-                        <img
+                        <Image
                             src={comment.author.profileImageUrl}
                             alt={comment.author.username}
+                            width={32}
+                            height={32}
                             className="w-full h-full object-cover"
                         />
                     ) : (
                         <div className="w-full h-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">
-                            {comment.author.username[0]?.toUpperCase() || '?'}
+                            {comment.author.username[0]?.toUpperCase() || "?"}
                         </div>
                     )}
                 </Avatar>
@@ -161,9 +168,7 @@ export const CommentItem = memo(function CommentItem({
                                 작성자
                             </span>
                         )}
-                        <span className="text-gray-500 text-xs">
-                            {timeAgo}
-                        </span>
+                        <span className="text-gray-500 text-xs">{timeAgo}</span>
                     </div>
 
                     {/* Comment Text */}
@@ -179,24 +184,41 @@ export const CommentItem = memo(function CommentItem({
                             disabled={!user || loading}
                             className={`flex items-center space-x-1 transition-all duration-200 transform ${
                                 comment.isLikedByCurrentUser
-                                    ? 'text-red-600 hover:text-red-700 scale-105'
-                                    : 'text-gray-500 hover:text-red-600'
-                            } ${!user ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-50 px-2 py-1 rounded hover:scale-105'}`}
+                                    ? "text-red-600 hover:text-red-700 scale-105"
+                                    : "text-gray-500 hover:text-red-600"
+                            } ${!user ? "cursor-not-allowed opacity-50" : "hover:bg-red-50 px-2 py-1 rounded hover:scale-105"}`}
                         >
                             {loading && (
-                                <LoadingSpinner size="sm" color="gray" className="mr-1" />
+                                <LoadingSpinner
+                                    size="sm"
+                                    color="gray"
+                                    className="mr-1"
+                                />
                             )}
                             <svg
                                 className={`w-4 h-4 transition-all duration-200 ${
-                                    comment.isLikedByCurrentUser ? 'fill-current animate-pulse' : 'stroke-current'
-                                } ${loading ? 'opacity-50' : ''}`}
+                                    comment.isLikedByCurrentUser
+                                        ? "fill-current animate-pulse"
+                                        : "stroke-current"
+                                } ${loading ? "opacity-50" : ""}`}
                                 viewBox="0 0 24 24"
-                                fill={comment.isLikedByCurrentUser ? 'currentColor' : 'none'}
+                                fill={
+                                    comment.isLikedByCurrentUser
+                                        ? "currentColor"
+                                        : "none"
+                                }
                                 stroke="currentColor"
                             >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                />
                             </svg>
-                            <span className="transition-all duration-200">{comment.likesCount}</span>
+                            <span className="transition-all duration-200">
+                                {comment.likesCount}
+                            </span>
                         </button>
 
                         {/* Reply Button */}
@@ -216,7 +238,7 @@ export const CommentItem = memo(function CommentItem({
                                 disabled={isDeleting}
                                 className="text-gray-500 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors disabled:opacity-50"
                             >
-                                {isDeleting ? '삭제 중...' : '삭제'}
+                                {isDeleting ? "삭제 중..." : "삭제"}
                             </button>
                         )}
                     </div>

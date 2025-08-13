@@ -3,17 +3,22 @@
  * Extends base types with component-specific interfaces and utilities
  */
 
-import { CommentDetail, CreateCommentRequest, PaginationMeta } from '@/types';
+import { CommentDetail, CreateCommentRequest, PaginationMeta } from "@/types";
 
 // =============================================================================
 // 🔄 Comment State Management Types
 // =============================================================================
 
 /** Comment loading states */
-export type CommentLoadingState = 'idle' | 'loading' | 'success' | 'error';
+export type CommentLoadingState = "idle" | "loading" | "success" | "error";
 
 /** Comment operation types for optimistic updates */
-export type CommentOperation = 'create' | 'update' | 'delete' | 'like' | 'reply';
+export type CommentOperation =
+    | "create"
+    | "update"
+    | "delete"
+    | "like"
+    | "reply";
 
 /** Comment error with operation context */
 export interface CommentError {
@@ -24,7 +29,7 @@ export interface CommentError {
 }
 
 // =============================================================================
-// 🎯 Comment Action Types  
+// 🎯 Comment Action Types
 // =============================================================================
 
 /** Like toggle data for comments */
@@ -57,7 +62,7 @@ export interface CommentListConfig {
     photoId?: number;
     seriesId?: number;
     pageSize?: number;
-    sortBy?: 'newest' | 'oldest' | 'popular';
+    sortBy?: "newest" | "oldest" | "popular";
     showReplies?: boolean;
     enableOptimisticUpdates?: boolean;
 }
@@ -74,15 +79,15 @@ export interface CommentListState {
 
 /** Comment list actions */
 export type CommentListAction =
-    | { type: 'SET_LOADING'; payload: CommentLoadingState }
-    | { type: 'SET_COMMENTS'; payload: CommentDetail[] }
-    | { type: 'ADD_COMMENTS'; payload: CommentDetail[] }
-    | { type: 'ADD_COMMENT'; payload: CommentDetail }
-    | { type: 'UPDATE_COMMENT'; payload: CommentDetail }
-    | { type: 'DELETE_COMMENT'; payload: number }
-    | { type: 'SET_PAGINATION'; payload: PaginationMeta }
-    | { type: 'SET_ERROR'; payload: CommentError | null }
-    | { type: 'CLEAR_ERROR' };
+    | { type: "SET_LOADING"; payload: CommentLoadingState }
+    | { type: "SET_COMMENTS"; payload: CommentDetail[] }
+    | { type: "ADD_COMMENTS"; payload: CommentDetail[] }
+    | { type: "ADD_COMMENT"; payload: CommentDetail }
+    | { type: "UPDATE_COMMENT"; payload: CommentDetail }
+    | { type: "DELETE_COMMENT"; payload: number }
+    | { type: "SET_PAGINATION"; payload: PaginationMeta }
+    | { type: "SET_ERROR"; payload: CommentError | null }
+    | { type: "CLEAR_ERROR" };
 
 // =============================================================================
 // 🎨 Comment UI Component Types
@@ -160,13 +165,13 @@ export interface CommentStatistics {
 // =============================================================================
 
 /** Comment interaction events */
-export type CommentEvent = 
-    | { type: 'comment_created'; comment: CommentDetail }
-    | { type: 'comment_updated'; comment: CommentDetail }
-    | { type: 'comment_deleted'; commentId: number }
-    | { type: 'comment_liked'; commentId: number; isLiked: boolean }
-    | { type: 'reply_created'; parentId: number; reply: CommentDetail }
-    | { type: 'comments_refreshed'; comments: CommentDetail[] };
+export type CommentEvent =
+    | { type: "comment_created"; comment: CommentDetail }
+    | { type: "comment_updated"; comment: CommentDetail }
+    | { type: "comment_deleted"; commentId: number }
+    | { type: "comment_liked"; commentId: number; isLiked: boolean }
+    | { type: "reply_created"; parentId: number; reply: CommentDetail }
+    | { type: "comments_refreshed"; comments: CommentDetail[] };
 
 /** Comment event handler */
 export type CommentEventHandler = (event: CommentEvent) => void;
@@ -177,23 +182,36 @@ export type CommentEventHandler = (event: CommentEvent) => void;
 
 /** Check if comment has replies */
 export function hasReplies(comment: CommentDetail): boolean {
-    return comment.repliesCount > 0 && Array.isArray(comment.replies) && comment.replies.length > 0;
+    return (
+        comment.repliesCount > 0 &&
+        Array.isArray(comment.replies) &&
+        comment.replies.length > 0
+    );
 }
 
 /** Check if comment can be edited */
-export function canEditComment(comment: CommentDetail, currentUserId?: number): boolean {
+export function canEditComment(
+    comment: CommentDetail,
+    currentUserId?: number
+): boolean {
     if (!currentUserId) return false;
     return comment.author.id === currentUserId && !comment.deletedAt;
 }
 
 /** Check if comment can be deleted */
-export function canDeleteComment(comment: CommentDetail, currentUserId?: number): boolean {
+export function canDeleteComment(
+    comment: CommentDetail,
+    currentUserId?: number
+): boolean {
     if (!currentUserId) return false;
     return comment.author.id === currentUserId && !comment.deletedAt;
 }
 
 /** Check if user can reply to comment */
-export function canReplyToComment(comment: CommentDetail, currentUserId?: number): boolean {
+export function canReplyToComment(
+    comment: CommentDetail,
+    currentUserId?: number
+): boolean {
     return !!currentUserId && !comment.deletedAt;
 }
 
@@ -203,16 +221,16 @@ export function buildCommentTree(comments: CommentDetail[]): CommentTreeNode[] {
     const rootComments: CommentTreeNode[] = [];
 
     // First pass: create nodes
-    comments.forEach(comment => {
+    comments.forEach((comment) => {
         commentMap.set(comment.id, {
             comment,
             children: [],
-            depth: 0
+            depth: 0,
         });
     });
 
     // Second pass: build tree structure
-    comments.forEach(comment => {
+    comments.forEach((comment) => {
         const node = commentMap.get(comment.id);
         if (!node) return;
 
@@ -236,16 +254,16 @@ export function buildCommentTree(comments: CommentDetail[]): CommentTreeNode[] {
 /** Flatten comment tree back to list */
 export function flattenCommentTree(tree: CommentTreeNode[]): CommentDetail[] {
     const result: CommentDetail[] = [];
-    
+
     function traverse(nodes: CommentTreeNode[]) {
-        nodes.forEach(node => {
+        nodes.forEach((node) => {
             result.push(node.comment);
             if (node.children.length > 0) {
                 traverse(node.children);
             }
         });
     }
-    
+
     traverse(tree);
     return result;
 }
@@ -254,8 +272,9 @@ export function flattenCommentTree(tree: CommentTreeNode[]): CommentDetail[] {
 export function calculateEngagementScore(comment: CommentDetail): number {
     const likes = comment.likesCount || 0;
     const replies = comment.repliesCount || 0;
-    const ageInHours = (Date.now() - new Date(comment.createdAt).getTime()) / (1000 * 60 * 60);
-    
+    const ageInHours =
+        (Date.now() - new Date(comment.createdAt).getTime()) / (1000 * 60 * 60);
+
     // Simple engagement score formula
     const score = (likes * 2 + replies * 3) / Math.max(1, ageInHours / 24);
     return Math.round(score * 100) / 100;
@@ -268,9 +287,9 @@ export function calculateEngagementScore(comment: CommentDetail): number {
 /** Default comment list configuration */
 export const DEFAULT_COMMENT_CONFIG: CommentListConfig = {
     pageSize: 20,
-    sortBy: 'newest',
+    sortBy: "newest",
     showReplies: true,
-    enableOptimisticUpdates: true
+    enableOptimisticUpdates: true,
 };
 
 /** Default comment form validation */
@@ -278,12 +297,12 @@ export const DEFAULT_FORM_VALIDATION: CommentFormValidation = {
     content: {
         required: true,
         minLength: 1,
-        maxLength: 500
+        maxLength: 500,
     },
     antiSpam: {
         enabled: true,
-        minInterval: 5
-    }
+        minInterval: 5,
+    },
 };
 
 /** Default comment item options */
@@ -293,7 +312,7 @@ export const DEFAULT_ITEM_OPTIONS: CommentItemOptions = {
     showLikeCount: true,
     showTimestamp: true,
     maxReplyDepth: 3,
-    enableKeyboardNavigation: true
+    enableKeyboardNavigation: true,
 };
 
 /** Comment operation timeout (for optimistic updates) */

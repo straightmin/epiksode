@@ -21,32 +21,38 @@ export default function CreateSeriesPage() {
     const [photos, setPhotos] = useState<SeriesPhoto[]>([
         {
             id: "1",
-            imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop",
+            imageUrl:
+                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop",
             title: "산속의 아침",
             order: 0,
         },
         {
             id: "2",
-            imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop",
+            imageUrl:
+                "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop",
             title: "도시의 야경",
             order: 1,
         },
         {
             id: "3",
-            imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop",
+            imageUrl:
+                "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop",
             title: "숲속의 오솔길",
             order: 2,
         },
     ]);
 
     const movePhotoUp = useCallback((photoId: string) => {
-        setPhotos(prevPhotos => {
-            const currentIndex = prevPhotos.findIndex(p => p.id === photoId);
+        setPhotos((prevPhotos) => {
+            const currentIndex = prevPhotos.findIndex((p) => p.id === photoId);
             if (currentIndex <= 0) return prevPhotos;
-            
+
             const newPhotos = [...prevPhotos];
-            [newPhotos[currentIndex - 1], newPhotos[currentIndex]] = [newPhotos[currentIndex], newPhotos[currentIndex - 1]];
-            
+            [newPhotos[currentIndex - 1], newPhotos[currentIndex]] = [
+                newPhotos[currentIndex],
+                newPhotos[currentIndex - 1],
+            ];
+
             return newPhotos.map((photo, index) => ({
                 ...photo,
                 order: index,
@@ -55,13 +61,16 @@ export default function CreateSeriesPage() {
     }, []);
 
     const movePhotoDown = useCallback((photoId: string) => {
-        setPhotos(prevPhotos => {
-            const currentIndex = prevPhotos.findIndex(p => p.id === photoId);
+        setPhotos((prevPhotos) => {
+            const currentIndex = prevPhotos.findIndex((p) => p.id === photoId);
             if (currentIndex >= prevPhotos.length - 1) return prevPhotos;
-            
+
             const newPhotos = [...prevPhotos];
-            [newPhotos[currentIndex], newPhotos[currentIndex + 1]] = [newPhotos[currentIndex + 1], newPhotos[currentIndex]];
-            
+            [newPhotos[currentIndex], newPhotos[currentIndex + 1]] = [
+                newPhotos[currentIndex + 1],
+                newPhotos[currentIndex],
+            ];
+
             return newPhotos.map((photo, index) => ({
                 ...photo,
                 order: index,
@@ -70,25 +79,25 @@ export default function CreateSeriesPage() {
     }, []);
 
     const removePhoto = useCallback((photoId: string) => {
-        setPhotos(prev => prev.filter(photo => photo.id !== photoId));
+        setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     }, []);
 
     const saveSeries = useCallback(() => {
         const seriesData = {
             title: seriesTitle,
             description: seriesDescription,
-            photos: photos.map(photo => ({
+            photos: photos.map((photo) => ({
                 id: photo.id,
                 order: photo.order,
             })),
         };
 
-        console.log('Saving series:', seriesData);
-        toast.success('시리즈가 성공적으로 생성되었습니다!');
+        console.log("Saving series:", seriesData);
+        toast.success("시리즈가 성공적으로 생성되었습니다!");
     }, [seriesTitle, seriesDescription, photos]);
 
     return (
-        <div 
+        <div
             className="min-h-screen p-4 lg:p-8"
             style={{
                 backgroundColor: isDark
@@ -99,7 +108,7 @@ export default function CreateSeriesPage() {
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 
+                    <h1
                         className="text-3xl font-display font-bold mb-2"
                         style={{
                             color: isDark
@@ -125,7 +134,7 @@ export default function CreateSeriesPage() {
                     {/* Series Info */}
                     <div className="space-y-4">
                         <div>
-                            <label 
+                            <label
                                 className="block text-sm font-medium mb-2"
                                 style={{
                                     color: isDark
@@ -147,7 +156,8 @@ export default function CreateSeriesPage() {
                                         : theme.theme.colors.background.main,
                                     borderColor: isDark
                                         ? theme.theme.colors.primary.darkGray
-                                        : theme.theme.colors.primary.purpleVeryLight,
+                                        : theme.theme.colors.primary
+                                              .purpleVeryLight,
                                     color: isDark
                                         ? theme.theme.colors.primary.white
                                         : theme.theme.colors.primary.black,
@@ -156,7 +166,7 @@ export default function CreateSeriesPage() {
                         </div>
 
                         <div>
-                            <label 
+                            <label
                                 className="block text-sm font-medium mb-2"
                                 style={{
                                     color: isDark
@@ -168,7 +178,9 @@ export default function CreateSeriesPage() {
                             </label>
                             <textarea
                                 value={seriesDescription}
-                                onChange={(e) => setSeriesDescription(e.target.value)}
+                                onChange={(e) =>
+                                    setSeriesDescription(e.target.value)
+                                }
                                 placeholder="시리즈에 대한 설명을 적어주세요"
                                 rows={4}
                                 className="w-full px-4 py-3 rounded-lg border resize-none"
@@ -178,7 +190,8 @@ export default function CreateSeriesPage() {
                                         : theme.theme.colors.background.main,
                                     borderColor: isDark
                                         ? theme.theme.colors.primary.darkGray
-                                        : theme.theme.colors.primary.purpleVeryLight,
+                                        : theme.theme.colors.primary
+                                              .purpleVeryLight,
                                     color: isDark
                                         ? theme.theme.colors.primary.white
                                         : theme.theme.colors.primary.black,
@@ -188,10 +201,13 @@ export default function CreateSeriesPage() {
 
                         <button
                             onClick={saveSeries}
-                            disabled={!seriesTitle.trim() || photos.length === 0}
+                            disabled={
+                                !seriesTitle.trim() || photos.length === 0
+                            }
                             className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
-                                backgroundColor: theme.theme.colors.primary.purple,
+                                backgroundColor:
+                                    theme.theme.colors.primary.purple,
                                 color: theme.theme.colors.primary.white,
                             }}
                         >
@@ -202,7 +218,7 @@ export default function CreateSeriesPage() {
 
                     {/* Photo Ordering */}
                     <div>
-                        <h3 
+                        <h3
                             className="text-lg font-bold mb-4"
                             style={{
                                 color: isDark
@@ -221,34 +237,47 @@ export default function CreateSeriesPage() {
                                     style={{
                                         backgroundColor: isDark
                                             ? theme.theme.colors.background.dark
-                                            : theme.theme.colors.background.main,
+                                            : theme.theme.colors.background
+                                                  .main,
                                         borderColor: isDark
-                                            ? theme.theme.colors.primary.darkGray
-                                            : theme.theme.colors.primary.purpleVeryLight,
+                                            ? theme.theme.colors.primary
+                                                  .darkGray
+                                            : theme.theme.colors.primary
+                                                  .purpleVeryLight,
                                     }}
                                 >
                                     {/* Order Controls */}
                                     <div className="flex flex-col gap-1">
                                         <button
-                                            onClick={() => movePhotoUp(photo.id)}
+                                            onClick={() =>
+                                                movePhotoUp(photo.id)
+                                            }
                                             disabled={index === 0}
                                             className="p-1 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                             style={{
                                                 color: isDark
-                                                    ? theme.theme.colors.primary.gray
-                                                    : theme.theme.colors.primary.darkGray,
+                                                    ? theme.theme.colors.primary
+                                                          .gray
+                                                    : theme.theme.colors.primary
+                                                          .darkGray,
                                             }}
                                         >
                                             <ArrowUp size={14} />
                                         </button>
                                         <button
-                                            onClick={() => movePhotoDown(photo.id)}
-                                            disabled={index === photos.length - 1}
+                                            onClick={() =>
+                                                movePhotoDown(photo.id)
+                                            }
+                                            disabled={
+                                                index === photos.length - 1
+                                            }
                                             className="p-1 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                             style={{
                                                 color: isDark
-                                                    ? theme.theme.colors.primary.gray
-                                                    : theme.theme.colors.primary.darkGray,
+                                                    ? theme.theme.colors.primary
+                                                          .gray
+                                                    : theme.theme.colors.primary
+                                                          .darkGray,
                                             }}
                                         >
                                             <ArrowDown size={14} />
@@ -259,8 +288,11 @@ export default function CreateSeriesPage() {
                                     <div
                                         className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                                         style={{
-                                            backgroundColor: theme.theme.colors.primary.purple,
-                                            color: theme.theme.colors.primary.white,
+                                            backgroundColor:
+                                                theme.theme.colors.primary
+                                                    .purple,
+                                            color: theme.theme.colors.primary
+                                                .white,
                                         }}
                                     >
                                         {index + 1}
@@ -281,8 +313,10 @@ export default function CreateSeriesPage() {
                                             className="font-medium truncate"
                                             style={{
                                                 color: isDark
-                                                    ? theme.theme.colors.primary.white
-                                                    : theme.theme.colors.primary.black,
+                                                    ? theme.theme.colors.primary
+                                                          .white
+                                                    : theme.theme.colors.primary
+                                                          .black,
                                             }}
                                         >
                                             {photo.title}
@@ -294,7 +328,8 @@ export default function CreateSeriesPage() {
                                         onClick={() => removePhoto(photo.id)}
                                         className="p-1 rounded transition-colors hover:bg-red-100"
                                         style={{
-                                            color: theme.theme.colors.accent.pink,
+                                            color: theme.theme.colors.accent
+                                                .pink,
                                         }}
                                     >
                                         <X size={16} />

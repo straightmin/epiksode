@@ -8,7 +8,7 @@ import { Search, Bell, Settings, X, Hash, User } from "lucide-react";
 
 interface SearchSuggestion {
     id: string;
-    type: 'user' | 'tag' | 'location';
+    type: "user" | "tag" | "location";
     text: string;
     subtitle?: string;
     image?: string;
@@ -19,7 +19,9 @@ const Header: React.FC = memo(() => {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
-    const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([]);
+    const [searchSuggestions, setSearchSuggestions] = useState<
+        SearchSuggestion[]
+    >([]);
     const searchRef = useRef<HTMLDivElement>(null);
 
     // 검색 제안 필터링 (현재는 간단한 태그 기반 제안)
@@ -30,23 +32,35 @@ const Header: React.FC = memo(() => {
         }
 
         // 간단한 태그 기반 검색 제안
-        const commonTags = ['자연', '도시', '풍경', '인물', '동물', '음식', '여행', '건축'];
+        const commonTags = [
+            "자연",
+            "도시",
+            "풍경",
+            "인물",
+            "동물",
+            "음식",
+            "여행",
+            "건축",
+        ];
         const suggestions: SearchSuggestion[] = commonTags
-            .filter(tag => tag.includes(query))
+            .filter((tag) => tag.includes(query))
             .map((tag, index) => ({
                 id: `tag-${index}`,
-                type: 'tag',
+                type: "tag",
                 text: tag,
-                subtitle: '태그 검색'
+                subtitle: "태그 검색",
             }));
 
         // 직접 검색어 제안 추가
-        if (suggestions.length === 0 || !suggestions.some(s => s.text === query)) {
+        if (
+            suggestions.length === 0 ||
+            !suggestions.some((s) => s.text === query)
+        ) {
             suggestions.unshift({
-                id: 'direct-search',
-                type: 'tag',
+                id: "direct-search",
+                type: "tag",
                 text: query,
-                subtitle: '검색'
+                subtitle: "검색",
             });
         }
 
@@ -54,33 +68,43 @@ const Header: React.FC = memo(() => {
     }, []);
 
     // 검색어 변경 핸들러
-    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setSearchQuery(value);
-        filterSuggestions(value);
-    }, [filterSuggestions]);
+    const handleSearchChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value;
+            setSearchQuery(value);
+            filterSuggestions(value);
+        },
+        [filterSuggestions]
+    );
 
     // 검색 실행
-    const handleSearch = useCallback((query?: string) => {
-        const searchTerm = query || searchQuery;
-        if (!searchTerm.trim()) return;
+    const handleSearch = useCallback(
+        (query?: string) => {
+            const searchTerm = query || searchQuery;
+            if (!searchTerm.trim()) return;
 
-        router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
-        setIsSearchFocused(false);
-        setSearchSuggestions([]);
-    }, [searchQuery, router]);
+            router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
+            setIsSearchFocused(false);
+            setSearchSuggestions([]);
+        },
+        [searchQuery, router]
+    );
 
     // 외부 클릭 감지
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+            if (
+                searchRef.current &&
+                !searchRef.current.contains(event.target as Node)
+            ) {
                 setIsSearchFocused(false);
                 setSearchSuggestions([]);
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     return (
@@ -127,7 +151,7 @@ const Header: React.FC = memo(() => {
                                     : theme.theme.colors.primary.darkGray,
                             }}
                         />
-                        
+
                         <input
                             type="text"
                             placeholder="사진, 사용자, 태그 검색..."
@@ -138,7 +162,7 @@ const Header: React.FC = memo(() => {
                                 filterSuggestions(searchQuery);
                             }}
                             onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === "Enter") {
                                     handleSearch();
                                 }
                             }}
@@ -150,14 +174,15 @@ const Header: React.FC = memo(() => {
                                 borderColor: isSearchFocused
                                     ? theme.theme.colors.primary.purple
                                     : isDark
-                                    ? theme.theme.colors.primary.darkGray
-                                    : theme.theme.colors.primary.purpleVeryLight,
+                                      ? theme.theme.colors.primary.darkGray
+                                      : theme.theme.colors.primary
+                                            .purpleVeryLight,
                                 color: isDark
                                     ? theme.theme.colors.primary.white
                                     : theme.theme.colors.primary.black,
                                 boxShadow: isSearchFocused
                                     ? `0 0 0 2px ${theme.theme.colors.primary.purpleVeryLight}`
-                                    : 'none',
+                                    : "none",
                             }}
                         />
 
@@ -189,38 +214,54 @@ const Header: React.FC = memo(() => {
                                         : theme.theme.colors.background.main,
                                     borderColor: isDark
                                         ? theme.theme.colors.primary.darkGray
-                                        : theme.theme.colors.primary.purpleVeryLight,
+                                        : theme.theme.colors.primary
+                                              .purpleVeryLight,
                                 }}
                             >
                                 {searchSuggestions.map((suggestion) => (
                                     <button
                                         key={suggestion.id}
-                                        onClick={() => handleSearch(suggestion.text)}
+                                        onClick={() =>
+                                            handleSearch(suggestion.text)
+                                        }
                                         className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-opacity-50 first:rounded-t-lg last:rounded-b-lg"
                                         style={{
                                             color: isDark
-                                                ? theme.theme.colors.primary.white
-                                                : theme.theme.colors.primary.black,
+                                                ? theme.theme.colors.primary
+                                                      .white
+                                                : theme.theme.colors.primary
+                                                      .black,
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = 
-                                                theme.theme.colors.primary.purpleVeryLight + '30';
+                                            e.currentTarget.style.backgroundColor =
+                                                theme.theme.colors.primary
+                                                    .purpleVeryLight + "30";
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                            e.currentTarget.style.backgroundColor =
+                                                "transparent";
                                         }}
                                     >
                                         {/* Icon */}
                                         <div
                                             className="w-8 h-8 rounded-full flex items-center justify-center"
                                             style={{
-                                                backgroundColor: theme.theme.colors.primary.purpleVeryLight,
-                                                color: theme.theme.colors.primary.purple,
+                                                backgroundColor:
+                                                    theme.theme.colors.primary
+                                                        .purpleVeryLight,
+                                                color: theme.theme.colors
+                                                    .primary.purple,
                                             }}
                                         >
-                                            {suggestion.type === 'user' && <User size={16} />}
-                                            {suggestion.type === 'tag' && <Hash size={16} />}
-                                            {suggestion.type === 'location' && <Search size={16} />}
+                                            {suggestion.type === "user" && (
+                                                <User size={16} />
+                                            )}
+                                            {suggestion.type === "tag" && (
+                                                <Hash size={16} />
+                                            )}
+                                            {suggestion.type === "location" && (
+                                                <Search size={16} />
+                                            )}
                                         </div>
 
                                         {/* Content */}
@@ -229,8 +270,10 @@ const Header: React.FC = memo(() => {
                                                 className="font-medium"
                                                 style={{
                                                     color: isDark
-                                                        ? theme.theme.colors.primary.white
-                                                        : theme.theme.colors.primary.black,
+                                                        ? theme.theme.colors
+                                                              .primary.white
+                                                        : theme.theme.colors
+                                                              .primary.black,
                                                 }}
                                             >
                                                 {suggestion.text}
@@ -240,8 +283,11 @@ const Header: React.FC = memo(() => {
                                                     className="text-sm"
                                                     style={{
                                                         color: isDark
-                                                            ? theme.theme.colors.primary.gray
-                                                            : theme.theme.colors.primary.darkGray,
+                                                            ? theme.theme.colors
+                                                                  .primary.gray
+                                                            : theme.theme.colors
+                                                                  .primary
+                                                                  .darkGray,
                                                     }}
                                                 >
                                                     {suggestion.subtitle}
@@ -273,7 +319,8 @@ const Header: React.FC = memo(() => {
                                 theme.theme.colors.primary.purple;
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.backgroundColor =
+                                "transparent";
                             e.currentTarget.style.color = isDark
                                 ? theme.theme.colors.primary.white
                                 : theme.theme.colors.primary.black;
@@ -308,7 +355,8 @@ const Header: React.FC = memo(() => {
                                 theme.theme.colors.primary.purple;
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.backgroundColor =
+                                "transparent";
                             e.currentTarget.style.color = isDark
                                 ? theme.theme.colors.primary.white
                                 : theme.theme.colors.primary.black;
@@ -328,7 +376,8 @@ const Header: React.FC = memo(() => {
                         <div
                             className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
                             style={{
-                                backgroundColor: theme.theme.colors.primary.purple,
+                                backgroundColor:
+                                    theme.theme.colors.primary.purple,
                                 color: theme.theme.colors.primary.white,
                             }}
                         >
@@ -341,6 +390,6 @@ const Header: React.FC = memo(() => {
     );
 });
 
-Header.displayName = 'Header';
+Header.displayName = "Header";
 
 export default Header;

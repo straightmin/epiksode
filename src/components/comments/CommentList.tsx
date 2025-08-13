@@ -3,14 +3,14 @@
  * Handles comment fetching, pagination, and state management
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { CommentItem } from './CommentItem';
-import { CommentForm } from './CommentForm';
-import { useComments } from './hooks/useComments';
-import { useAuth } from '@/contexts/AuthContext';
-import { CommentDetail } from '@/types';
+import React from "react";
+import { CommentItem } from "./CommentItem";
+import { CommentForm } from "./CommentForm";
+import { useComments } from "./hooks/useComments";
+import { useAuth } from "@/contexts/AuthContext";
+import { CommentDetail } from "@/types";
 
 interface CommentListProps {
     photoId?: number;
@@ -22,11 +22,11 @@ interface CommentListProps {
 /**
  * Comment list container component with pagination and real-time updates
  */
-export function CommentList({ 
-    photoId, 
-    seriesId, 
+export function CommentList({
+    photoId,
+    seriesId,
     initialComments = [],
-    className = '' 
+    className = "",
 }: CommentListProps) {
     const { user } = useAuth();
     const {
@@ -37,11 +37,10 @@ export function CommentList({
         refreshComments,
         loadMoreComments,
         optimisticUpdate,
-        rollbackUpdate
     } = useComments({
         photoId,
         seriesId,
-        initialComments
+        initialComments,
     });
 
     // Loading state
@@ -71,11 +70,23 @@ export function CommentList({
         return (
             <div className={`text-center py-8 ${className}`}>
                 <div className="text-red-500 mb-4">
-                    <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                    <svg
+                        className="w-12 h-12 mx-auto mb-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 18.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
                     </svg>
                 </div>
-                <p className="text-gray-600 mb-4">댓글을 불러오는데 실패했습니다</p>
+                <p className="text-gray-600 mb-4">
+                    댓글을 불러오는데 실패했습니다
+                </p>
                 <button
                     onClick={refreshComments}
                     className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
@@ -94,10 +105,10 @@ export function CommentList({
                     photoId={photoId}
                     seriesId={seriesId}
                     onCommentCreated={(newComment) => {
-                        optimisticUpdate('create', newComment);
+                        optimisticUpdate("create", newComment);
                     }}
                     onError={(error) => {
-                        console.error('Comment creation failed:', error);
+                        console.error("Comment creation failed:", error);
                         // Could show toast notification here
                     }}
                 />
@@ -106,7 +117,7 @@ export function CommentList({
             {/* Comments Header */}
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">
-                    댓글 {pagination?.total > 0 && `(${pagination.total})`}
+                    댓글 {pagination?.total && pagination.total > 0 && `(${pagination.total})`}
                 </h3>
                 {comments.length > 0 && (
                     <button
@@ -123,8 +134,18 @@ export function CommentList({
             <div className="space-y-4">
                 {comments.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                        <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        <svg
+                            className="w-12 h-12 mx-auto mb-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            />
                         </svg>
                         <p>첫 번째 댓글을 남겨보세요!</p>
                     </div>
@@ -134,16 +155,20 @@ export function CommentList({
                             key={comment.id}
                             comment={comment}
                             onUpdate={(updatedComment) => {
-                                optimisticUpdate('update', updatedComment);
+                                optimisticUpdate("update", updatedComment);
                             }}
                             onDelete={(commentId) => {
-                                optimisticUpdate('delete', { id: commentId } as CommentDetail);
+                                optimisticUpdate("delete", {
+                                    id: commentId,
+                                } as CommentDetail);
                             }}
-                            onError={(error, operation, originalComment) => {
-                                console.error(`Comment ${operation} failed:`, error);
-                                if (originalComment) {
-                                    rollbackUpdate(originalComment);
-                                }
+                            onError={(error, operation) => {
+                                console.error(
+                                    `Comment ${operation} failed:`,
+                                    error
+                                );
+                                // Note: rollback functionality would need to be handled differently
+                                // since we no longer have access to originalComment here
                             }}
                         />
                     ))
@@ -158,7 +183,7 @@ export function CommentList({
                         disabled={loading}
                         className="px-6 py-2 text-sm text-purple-600 border border-purple-200 rounded-full hover:bg-purple-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? '로딩 중...' : '더 보기'}
+                        {loading ? "로딩 중..." : "더 보기"}
                     </button>
                 </div>
             )}

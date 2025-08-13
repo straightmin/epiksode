@@ -2,7 +2,7 @@
  * useKeyboardNavigation - Enhanced keyboard navigation for comment system
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from "react";
 
 interface UseKeyboardNavigationOptions {
     enabled?: boolean;
@@ -24,59 +24,62 @@ export function useKeyboardNavigation({
     onArrowUp,
     onArrowDown,
     onTab,
-    onShiftTab
+    onShiftTab,
 }: UseKeyboardNavigationOptions) {
     const elementRef = useRef<HTMLElement>(null);
 
-    const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if (!enabled) return;
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            if (!enabled) return;
 
-        switch (event.key) {
-            case 'Escape':
-                event.preventDefault();
-                onEscape?.();
-                break;
-
-            case 'Enter':
-                if (!event.shiftKey && !event.ctrlKey && !event.metaKey) {
+            switch (event.key) {
+                case "Escape":
                     event.preventDefault();
-                    onEnter?.();
-                }
-                break;
+                    onEscape?.();
+                    break;
 
-            case 'ArrowUp':
-                if (!event.shiftKey && !event.ctrlKey && !event.metaKey) {
-                    event.preventDefault();
-                    onArrowUp?.();
-                }
-                break;
+                case "Enter":
+                    if (!event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                        event.preventDefault();
+                        onEnter?.();
+                    }
+                    break;
 
-            case 'ArrowDown':
-                if (!event.shiftKey && !event.ctrlKey && !event.metaKey) {
-                    event.preventDefault();
-                    onArrowDown?.();
-                }
-                break;
+                case "ArrowUp":
+                    if (!event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                        event.preventDefault();
+                        onArrowUp?.();
+                    }
+                    break;
 
-            case 'Tab':
-                if (event.shiftKey) {
-                    onShiftTab?.();
-                } else {
-                    onTab?.();
-                }
-                break;
+                case "ArrowDown":
+                    if (!event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                        event.preventDefault();
+                        onArrowDown?.();
+                    }
+                    break;
 
-            default:
-                break;
-        }
-    }, [enabled, onEscape, onEnter, onArrowUp, onArrowDown, onTab, onShiftTab]);
+                case "Tab":
+                    if (event.shiftKey) {
+                        onShiftTab?.();
+                    } else {
+                        onTab?.();
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        },
+        [enabled, onEscape, onEnter, onArrowUp, onArrowDown, onTab, onShiftTab]
+    );
 
     useEffect(() => {
         const element = elementRef.current;
         if (!element || !enabled) return;
 
-        element.addEventListener('keydown', handleKeyDown);
-        return () => element.removeEventListener('keydown', handleKeyDown);
+        element.addEventListener("keydown", handleKeyDown);
+        return () => element.removeEventListener("keydown", handleKeyDown);
     }, [handleKeyDown, enabled]);
 
     return { elementRef };
@@ -87,40 +90,55 @@ export function useKeyboardNavigation({
  */
 export function useCommentFocus() {
     const focusComment = useCallback((commentId: number) => {
-        const element = document.querySelector(`[data-comment-id="${commentId}"]`);
+        const element = document.querySelector(
+            `[data-comment-id="${commentId}"]`
+        );
         if (element instanceof HTMLElement) {
             element.focus();
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }, []);
 
     const focusNextComment = useCallback((currentId: number) => {
-        const comments = Array.from(document.querySelectorAll('[data-comment-id]'));
-        const currentIndex = comments.findIndex(el => el.getAttribute('data-comment-id') === currentId.toString());
-        
+        const comments = Array.from(
+            document.querySelectorAll("[data-comment-id]")
+        );
+        const currentIndex = comments.findIndex(
+            (el) => el.getAttribute("data-comment-id") === currentId.toString()
+        );
+
         if (currentIndex >= 0 && currentIndex < comments.length - 1) {
             const nextComment = comments[currentIndex + 1] as HTMLElement;
             nextComment.focus();
-            nextComment.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            nextComment.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }, []);
 
     const focusPreviousComment = useCallback((currentId: number) => {
-        const comments = Array.from(document.querySelectorAll('[data-comment-id]'));
-        const currentIndex = comments.findIndex(el => el.getAttribute('data-comment-id') === currentId.toString());
-        
+        const comments = Array.from(
+            document.querySelectorAll("[data-comment-id]")
+        );
+        const currentIndex = comments.findIndex(
+            (el) => el.getAttribute("data-comment-id") === currentId.toString()
+        );
+
         if (currentIndex > 0) {
             const previousComment = comments[currentIndex - 1] as HTMLElement;
             previousComment.focus();
-            previousComment.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            previousComment.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
         }
     }, []);
 
     const focusCommentForm = useCallback(() => {
-        const textarea = document.querySelector('textarea[placeholder*="댓글"]') as HTMLTextAreaElement;
+        const textarea = document.querySelector(
+            "textarea[placeholder*=\"댓글\"]"
+        ) as HTMLTextAreaElement;
         if (textarea) {
             textarea.focus();
-            textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            textarea.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }, []);
 
@@ -128,7 +146,7 @@ export function useCommentFocus() {
         focusComment,
         focusNextComment,
         focusPreviousComment,
-        focusCommentForm
+        focusCommentForm,
     };
 }
 

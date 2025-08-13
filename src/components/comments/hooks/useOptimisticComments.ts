@@ -3,12 +3,12 @@
  * Provides optimistic UI updates with rollback capability for better UX
  */
 
-import { useState, useCallback, useRef } from 'react';
-import { CommentDetail } from '@/types';
+import { useState, useCallback, useRef } from "react";
+import { CommentDetail } from "@/types";
 
 interface OptimisticOperation {
     id: string;
-    type: 'create' | 'update' | 'delete' | 'like';
+    type: "create" | "update" | "delete" | "like";
     originalState: CommentDetail[];
     timestamp: number;
 }
@@ -22,7 +22,7 @@ interface UseOptimisticCommentsReturn {
     comments: CommentDetail[];
     setComments: (comments: CommentDetail[]) => void;
     applyOptimisticUpdate: (
-        type: 'create' | 'update' | 'delete' | 'like',
+        type: "create" | "update" | "delete" | "like",
         comment: CommentDetail,
         updateFn?: (prev: CommentDetail[]) => CommentDetail[]
     ) => string; // Returns operation ID
@@ -37,10 +37,12 @@ interface UseOptimisticCommentsReturn {
  */
 export function useOptimisticComments({
     initialComments = [],
-    rollbackTimeout = 10000 // 10 seconds default
+    rollbackTimeout = 10000, // 10 seconds default
 }: UseOptimisticCommentsOptions = {}): UseOptimisticCommentsReturn {
     const [comments, setComments] = useState<CommentDetail[]>(initialComments);
-    const pendingOperations = useRef<Map<string, OptimisticOperation>>(new Map());
+    const pendingOperations = useRef<Map<string, OptimisticOperation>>(
+        new Map()
+    );
     const rollbackTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
     // Generate unique operation ID
@@ -58,90 +60,105 @@ export function useOptimisticComments({
     }, []);
 
     // Apply optimistic update
-    const applyOptimisticUpdate = useCallback((
-        type: 'create' | 'update' | 'delete' | 'like',
-        comment: CommentDetail,
-        updateFn?: (prev: CommentDetail[]) => CommentDetail[]
-    ): string => {
-        const operationId = generateOperationId();
+    const applyOptimisticUpdate = useCallback(
+        (
+            type: "create" | "update" | "delete" | "like",
+            comment: CommentDetail,
+            updateFn?: (prev: CommentDetail[]) => CommentDetail[]
+        ): string => {
+            const operationId = generateOperationId();
 
-        setComments(prev => {
-            // Store original state for potential rollback
-            const operation: OptimisticOperation = {
-                id: operationId,
-                type,
-                originalState: [...prev],
-                timestamp: Date.now()
-            };
-            pendingOperations.current.set(operationId, operation);
+            setComments((prev) => {
+                // Store original state for potential rollback
+                const operation: OptimisticOperation = {
+                    id: operationId,
+                    type,
+                    originalState: [...prev],
+                    timestamp: Date.now(),
+                };
+                pendingOperations.current.set(operationId, operation);
 
-            // Apply custom update function if provided
-            if (updateFn) {
-                return updateFn(prev);
-            }
+                // Apply custom update function if provided
+                if (updateFn) {
+                    return updateFn(prev);
+                }
 
-            // Default update logic based on operation type
-            switch (type) {
-                case 'create':
-                    return [comment, ...prev];
+                // Default update logic based on operation type
+                switch (type) {
+                    case "create":
+                        return [comment, ...prev];
 
-                case 'update':
-                    return prev.map(c => c.id === comment.id ? { ...c, ...comment } : c);
+                    case "update":
+                        return prev.map((c) =>
+                            c.id === comment.id ? { ...c, ...comment } : c
+                        );
 
-                case 'delete':
-                    return prev.filter(c => c.id !== comment.id);
+                    case "delete":
+                        return prev.filter((c) => c.id !== comment.id);
 
-                case 'like':
-                    return prev.map(c => 
-                        c.id === comment.id 
-                            ? { 
-                                ...c, 
-                                isLikedByCurrentUser: comment.isLikedByCurrentUser,
-                                likesCount: comment.likesCount 
-                            }
-                            : c
-                    );
+                    case "like":
+                        return prev.map((c) =>
+                            c.id === comment.id
+                                ? {
+                                      ...c,
+                                      isLikedByCurrentUser:
+                                          comment.isLikedByCurrentUser,
+                                      likesCount: comment.likesCount,
+                                  }
+                                : c
+                        );
 
-                default:
-                    return prev;
-            }
-        });
+                    default:
+                        return prev;
+                }
+            });
 
-        // Set auto-rollback timer
-        const rollbackTimer = setTimeout(() => {
-            console.warn(`Auto-rolling back operation ${operationId} after timeout`);
-            rollbackOperation(operationId);
-        }, rollbackTimeout);
+            // Set auto-rollback timer
+            const rollbackTimer = setTimeout(() => {
+                console.warn(
+                    `Auto-rolling back operation ${operationId} after timeout`
+                );
+                rollbackOperation(operationId);
+            }, rollbackTimeout);
 
-        rollbackTimers.current.set(operationId, rollbackTimer);
+            rollbackTimers.current.set(operationId, rollbackTimer);
 
-        return operationId;
-    }, [generateOperationId, rollbackTimeout]);
+            return operationId;
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [generateOperationId, rollbackTimeout]
+    );
 
     // Rollback specific operation
-    const rollbackOperation = useCallback((operationId: string) => {
-        const operation = pendingOperations.current.get(operationId);
-        if (!operation) {
-            console.warn(`No operation found with ID: ${operationId}`);
-            return;
-        }
+    const rollbackOperation = useCallback(
+        (operationId: string) => {
+            const operation = pendingOperations.current.get(operationId);
+            if (!operation) {
+                console.warn(`No operation found with ID: ${operationId}`);
+                return;
+            }
 
-        // Restore original state
-        setComments(operation.originalState);
+            // Restore original state
+            setComments(operation.originalState);
 
-        // Clean up
-        pendingOperations.current.delete(operationId);
-        clearRollbackTimer(operationId);
+            // Clean up
+            pendingOperations.current.delete(operationId);
+            clearRollbackTimer(operationId);
 
-        console.log(`Rolled back ${operation.type} operation:`, operationId);
-    }, [clearRollbackTimer]);
+            console.log(
+                `Rolled back ${operation.type} operation:`,
+                operationId
+            );
+        },
+        [clearRollbackTimer]
+    );
 
     // Rollback all pending operations
     const rollbackAll = useCallback(() => {
         const operations = Array.from(pendingOperations.current.values());
-        
+
         // Find the earliest operation and restore to that state
-        const earliestOperation = operations.reduce((earliest, current) => 
+        const earliestOperation = operations.reduce((earliest, current) =>
             current.timestamp < earliest.timestamp ? current : earliest
         );
 
@@ -151,21 +168,27 @@ export function useOptimisticComments({
 
         // Clear all operations and timers
         pendingOperations.current.clear();
-        rollbackTimers.current.forEach(timer => clearTimeout(timer));
+        rollbackTimers.current.forEach((timer) => clearTimeout(timer));
         rollbackTimers.current.clear();
 
         console.log(`Rolled back ${operations.length} operations`);
     }, []);
 
     // Confirm operation (remove from pending)
-    const confirmOperation = useCallback((operationId: string) => {
-        const operation = pendingOperations.current.get(operationId);
-        if (operation) {
-            pendingOperations.current.delete(operationId);
-            clearRollbackTimer(operationId);
-            console.log(`Confirmed ${operation.type} operation:`, operationId);
-        }
-    }, [clearRollbackTimer]);
+    const confirmOperation = useCallback(
+        (operationId: string) => {
+            const operation = pendingOperations.current.get(operationId);
+            if (operation) {
+                pendingOperations.current.delete(operationId);
+                clearRollbackTimer(operationId);
+                console.log(
+                    `Confirmed ${operation.type} operation:`,
+                    operationId
+                );
+            }
+        },
+        [clearRollbackTimer]
+    );
 
     // Get all pending operations
     const getPendingOperations = useCallback((): OptimisticOperation[] => {
@@ -179,7 +202,7 @@ export function useOptimisticComments({
         rollbackOperation,
         rollbackAll,
         confirmOperation,
-        getPendingOperations
+        getPendingOperations,
     };
 }
 
