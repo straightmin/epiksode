@@ -1,0 +1,11 @@
+{
+    "success": false,
+    "message": "이메일 또는 패스워드가 올바르지 않습니다.",
+    "error": {
+        "code": "AUTH_001",
+        "details": {
+            "field": "email",
+            "attemptedValue": "wrong@example.com"
+        }
+    }
+}

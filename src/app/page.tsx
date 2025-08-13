@@ -1,103 +1,161 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useCallback } from "react";
+import {
+    useThemeContext,
+    DarkModeToggle,
+} from "../../frontend-theme-system/components/ThemeProvider";
+import PhotoGrid from "../components/photos/PhotoGrid";
+import PhotoModal from "../components/photos/PhotoModal";
+import { usePhotos } from "../hooks/usePhotos";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    const { theme, isDark } = useThemeContext();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    // 사진 데이터 관리 훅
+    const {
+        photos,
+        loading,
+        initialLoading,
+        hasMore,
+        error,
+        loadMore,
+        toggleLike,
+        clearError,
+    } = usePhotos({
+        limit: 10,
+        sortBy: "latest",
+    });
+
+    const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handlePhotoClick = useCallback((photoId: number) => {
+        setSelectedPhotoId(photoId);
+        setIsModalOpen(true);
+    }, []);
+
+    const handleModalClose = useCallback(() => {
+        setIsModalOpen(false);
+        setSelectedPhotoId(null);
+    }, []);
+
+    const handleModalNext = useCallback(() => {
+        if (!selectedPhotoId) return;
+        const currentIndex = photos.findIndex((p) => p.id === selectedPhotoId);
+        const nextIndex = (currentIndex + 1) % photos.length;
+        setSelectedPhotoId(photos[nextIndex].id);
+    }, [selectedPhotoId, photos]);
+
+    const handleModalPrevious = useCallback(() => {
+        if (!selectedPhotoId) return;
+        const currentIndex = photos.findIndex((p) => p.id === selectedPhotoId);
+        const prevIndex =
+            currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
+        setSelectedPhotoId(photos[prevIndex].id);
+    }, [selectedPhotoId, photos]);
+
+    const handleFollow = useCallback((userId: number) => {
+        // 팔로우 기능은 향후 구현 예정
+        console.log("팔로우 기능:", userId);
+    }, []);
+
+    return (
+        <div
+            className="min-h-screen"
+            style={{
+                backgroundColor: isDark
+                    ? theme.theme.colors.background.dark
+                    : theme.theme.colors.background.main,
+            }}
+        >
+            {/* Dark Mode Toggle (floating) */}
+            <div className="fixed top-20 right-4 z-40 lg:top-24 lg:right-8">
+                <DarkModeToggle />
+            </div>
+
+            {/* Main Feed Content */}
+            <div className="max-w-screen-xl mx-auto">
+                {error && (
+                    <div className="m-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        <div className="flex items-center justify-between">
+                            <span>{error}</span>
+                            <button
+                                onClick={clearError}
+                                className="text-red-500 hover:text-red-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {initialLoading || (photos.length === 0 && loading) ? (
+                    <div className="flex justify-center py-12">
+                        <div
+                            className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
+                            style={{
+                                borderColor: theme.theme.colors.primary.purple,
+                                borderTopColor: "transparent",
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <PhotoGrid
+                        photos={photos}
+                        onLike={toggleLike}
+                        onPhotoClick={handlePhotoClick}
+                        onLoadMore={loadMore}
+                        hasMore={hasMore}
+                        loading={loading}
+                    />
+                )}
+            </div>
+
+            {/* Status Badge */}
+            <div
+                className="fixed bottom-4 left-4 px-3 py-2 rounded-full text-xs font-medium lg:bottom-8 lg:left-8 lg:text-sm"
+                style={{
+                    backgroundColor: theme.theme.colors.primary.purpleVeryLight,
+                    color: theme.theme.colors.primary.purple,
+                }}
+            >
+                개발 중 🚧
+            </div>
+
+            {/* Photo Modal */}
+            {selectedPhotoId &&
+                (() => {
+                    const selectedPhoto = photos.find(
+                        (p) => p.id === selectedPhotoId
+                    );
+
+                    // 사진을 찾지 못한 경우 안전하게 처리
+                    if (!selectedPhoto) {
+                        console.warn(
+                            `Photo with id ${selectedPhotoId} not found`
+                        );
+                        return null;
+                    }
+
+                    const currentIndex = photos.findIndex(
+                        (p) => p.id === selectedPhotoId
+                    );
+
+                    return (
+                        <PhotoModal
+                            photo={selectedPhoto}
+                            isOpen={isModalOpen}
+                            onClose={handleModalClose}
+                            onNext={handleModalNext}
+                            onPrevious={handleModalPrevious}
+                            hasNext={currentIndex < photos.length - 1}
+                            hasPrevious={currentIndex > 0}
+                            onLike={toggleLike}
+                            onFollow={handleFollow}
+                        />
+                    );
+                })()}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }
